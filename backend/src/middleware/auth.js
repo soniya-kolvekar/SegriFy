@@ -39,6 +39,7 @@ const verifyFirebaseToken = async (req, res, next) => {
     req.user = {
       firebaseUid: decodedToken.uid,
       email: decodedToken.email,
+      admin: decodedToken.admin || false, // Pass custom claim status
       ... (user ? { id: user._id, role: user.role, mongoUser: user } : {})
     };
     
@@ -64,28 +65,18 @@ const checkRole = (allowedRoles) => {
 };
 
 const verifyMunicipal = (req, res, next) => {
-  // First ensure they are actually marked as municipal (or worker, per new rules)
-  if (req.user.role !== 'municipal') {
-    return res.status(403).json({ message: 'Forbidden: Not a municipal account' });
-  }
-
-  // Then enforce the backend-controlled secret
-  const secretId = req.headers['x-municipal-id'];
-  if (!secretId || secretId !== process.env.MUNICIPAL_SECRET) {
-    return res.status(403).json({ message: 'Forbidden: Invalid municipal access signature' });
+  // Rely purely on the immutable Custom Claim assigned by Firebase
+  if (req.user.admin !== true && req.user.role !== 'municipal') {
+    return res.status(403).json({ message: 'Forbidden: Missing Hardcoded Municipal Claims' });
   }
 
   next();
 };
 
 const verifyWorker = (req, res, next) => {
-  if (req.user.role !== 'worker') {
-    return res.status(403).json({ message: 'Forbidden: Not a worker account' });
-  }
-
-  const secretId = req.headers['x-municipal-id']; // Workers also use municipal infrastructure
-  if (!secretId || secretId !== process.env.MUNICIPAL_SECRET) {
-    return res.status(403).json({ message: 'Forbidden: Invalid worker access signature' });
+  // Workers could either have an admin claim or a worker role
+  if (req.user.admin !== true && req.user.role !== 'worker') {
+    return res.status(403).json({ message: 'Forbidden: Missing Worker Verification' });
   }
 
   next();

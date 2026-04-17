@@ -36,8 +36,7 @@ export default function MunicipalDashboard() {
       try {
         const response = await fetch('http://localhost:5000/api/dashboard/analytics/city', {
             headers: {
-                'Authorization': `Bearer ${token}`,
-                'x-municipal-id': 'your_super_secret_key' // Fallback simulated secret for frontend
+                'Authorization': `Bearer ${token}`
             }
         });
         const data = await response.json();

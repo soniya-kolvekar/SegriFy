@@ -23,9 +23,25 @@ export default function LoginPage() {
     try {
       // 1. Firebase Sign In
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const firebaseToken = await userCredential.user.getIdToken();
+      
+      // Get the ID token and its decoded payload to rigorously check Custom Claims
+      const tokenResult = await userCredential.user.getIdTokenResult(true);
+      const firebaseToken = tokenResult.token;
+      
+      // If the hardcoded Firebase admin claim exists, grant immediate secure access.
+      if (tokenResult.claims.admin) {
+        setAuth({
+            id: 'admin_override',
+            firebaseUid: userCredential.user.uid,
+            name: 'Municipal Administrator',
+            email: userCredential.user.email || '',
+            role: 'municipal'
+        }, firebaseToken);
+        router.push('/municipal');
+        return;
+      }
 
-      // 2. Fetch User Profile from MongoDB to get roles
+      // 2. Otherwise for Citizens/Businesses, fetch User Profile from MongoDB
       const response = await fetch('http://localhost:5000/api/auth/me', {
         method: 'GET',
         headers: { 
