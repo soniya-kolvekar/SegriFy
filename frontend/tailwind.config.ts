@@ -25,11 +25,11 @@ const config: Config = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         brand: {
-          primary: "#2D4C3E",
-          secondary: "#D1E1D9",
-          accent: "#F97316",
-          bg: "#F8FAF9",
-          muted: "#E2E8F0",
+          primary: "#5C5D47",
+          secondary: "#EFEBE3",
+          accent: "#5C5D47",
+          bg: "#F9F7F2",
+          muted: "#DED9D1",
         },
         primary: {
           DEFAULT: "hsl(var(--primary))",

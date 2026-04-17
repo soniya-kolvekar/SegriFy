@@ -10,6 +10,10 @@ interface User {
   qrToken?: string;
   points?: number;
   eligibilityStatus?: boolean;
+  businessName?: string;
+  aadhaarNo?: string;
+  panCard?: string;
+  shopNumber?: string;
 }
 
 interface AuthState {
