@@ -4,26 +4,45 @@
 
 @layer base {
   :root {
-    --background: 150 20% 98%;
-    --foreground: 150 15% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 150 15% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 150 15% 10%;
-    --primary: 153 25% 24%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 153 18% 85%;
-    --secondary-foreground: 153 25% 24%;
-    --muted: 153 10% 94%;
-    --muted-foreground: 153 10% 40%;
-    --accent: 25 95% 53%;
-    --accent-foreground: 0 0% 100%;
+    /* Brand Palette - Direct mapping from requested RGB values */
+    --white-smoke: 242 244 241;
+    --dark-khaki: 91 100 53;
+    --dark-khaki-light: 151 167 88;
+    --dusty-olive: 123 130 74;
+    --dry-sage: 161 162 93;
+    --ash-brown: 60 49 42;
+    --ash-brown-muted: 119 99 85;
+
+    /* Base theme mapping */
+    --background: var(--white-smoke);
+    --foreground: var(--ash-brown);
+    
+    --card: 255 255 255;
+    --card-foreground: var(--ash-brown);
+    
+    --popover: 255 255 255;
+    --popover-foreground: var(--ash-brown);
+    
+    --primary: var(--dark-khaki);
+    --primary-foreground: var(--white-smoke);
+    
+    --secondary: 234 237 222; /* Dark Khaki 100 */
+    --secondary-foreground: var(--dark-khaki);
+    
+    --muted: 230 233 226; /* White smoke 100 */
+    --muted-foreground: var(--ash-brown-muted);
+    
+    --accent: var(--dry-sage);
+    --accent-foreground: var(--white-smoke);
+    
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 153 15% 90%;
-    --input: 153 15% 90%;
-    --ring: 153 25% 24%;
-    --radius: 0.75rem;
+    
+    --border: 204 210 198; /* White smoke 200 */
+    --input: 204 210 198;
+    --ring: var(--dark-khaki);
+    
+    --radius: 1rem;
   }
 }
 
@@ -32,7 +51,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-brand-bg text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading font-semibold tracking-tight;
