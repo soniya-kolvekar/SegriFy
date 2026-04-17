@@ -1,0 +1,21 @@
+const mongoose = require('mongoose');
+
+const userSchema = new mongoose.Schema({
+  firebaseUid: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  role: { 
+    type: String, 
+    enum: ['citizen', 'worker', 'municipal', 'business'], 
+    default: 'citizen' 
+  },
+  houseId: { type: String },
+  shopId: { type: String },
+  maskedAadhaar: { type: String },
+  qrToken: { type: String, unique: true },
+  points: { type: Number, default: 0 },
+  eligibilityStatus: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
+module.exports = mongoose.model('User', userSchema);

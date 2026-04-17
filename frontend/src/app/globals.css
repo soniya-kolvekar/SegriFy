@@ -1,0 +1,52 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@layer base {
+  :root {
+    --background: 150 20% 98%;
+    --foreground: 150 15% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 150 15% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 150 15% 10%;
+    --primary: 153 25% 24%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 153 18% 85%;
+    --secondary-foreground: 153 25% 24%;
+    --muted: 153 10% 94%;
+    --muted-foreground: 153 10% 40%;
+    --accent: 25 95% 53%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 153 15% 90%;
+    --input: 153 15% 90%;
+    --ring: 153 25% 24%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-brand-bg text-foreground font-sans antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading font-semibold tracking-tight;
+  }
+}
+
+.glass-card {
+  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-sm;
+}
+
+.calendar-cell-proper {
+  @apply bg-green-100 border-green-200 text-green-700;
+}
+
+.calendar-cell-improper {
+  @apply bg-red-100 border-red-200 text-red-700;
+}
