@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "Real-time waste segregation and reward system.",
 };
 
+import Script from "next/script";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,7 +30,13 @@ export default function RootLayout({
       className={`${inter.variable} ${publicSans.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="h-full font-sans">{children}</body>
+      <body className="h-full font-sans">
+        {children}
+        <Script
+          id="razorpay-checkout-js"
+          src="https://checkout.razorpay.com/v1/checkout.js"
+        />
+      </body>
     </html>
   );
 }
