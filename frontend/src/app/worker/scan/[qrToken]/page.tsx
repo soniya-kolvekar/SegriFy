@@ -105,132 +105,133 @@ export default function DirectScanPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-brand-primary flex items-center justify-center p-6">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-10 h-10 text-[#4D5443] animate-spin" />
-          <p className="text-xs font-black text-[#7A7D74] uppercase tracking-widest">Validating Infrastructure...</p>
+          <Loader2 className="w-10 h-10 text-white animate-spin" />
+          <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Decrypting Identity...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] p-6 lg:p-12 flex flex-col items-center justify-center">
-      <div className="w-full max-w-md bg-white border border-[#E5E2D9] shadow-2xl relative overflow-hidden">
+    <div className="min-h-screen bg-brand-primary p-6 lg:p-12 flex flex-col items-center justify-center font-sans transition-all duration-500">
+      <div className="w-full max-w-lg bg-black/40 backdrop-blur-xl border border-white/10 shadow-[0_0_150px_rgba(0,0,0,0.6)] relative overflow-hidden">
         
         {/* Top Decoration */}
-        <div className="h-2 bg-gradient-to-r from-[#4D5443] via-[#788852] to-[#4D5443]" />
+        <div className="h-3 bg-brand-secondary/80 animate-pulse" />
         
-        <div className="p-8 space-y-8">
+        <div className="p-10 space-y-10">
           
           <div className="flex items-center justify-between">
             <button 
               onClick={() => router.push('/worker')}
-              className="flex items-center gap-2 text-[10px] font-black text-[#7A7D74] uppercase tracking-widest hover:text-[#4D5443] transition-colors"
+              className="flex items-center gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.3em] hover:text-white transition-all group"
             >
-              <ChevronLeft className="w-4 h-4" />
-              Dashboard
+              <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              Return to Node
             </button>
-            <ShieldCheck className="w-6 h-6 text-[#4D5443]" />
+            <ShieldCheck className="w-8 h-8 text-brand-secondary opacity-50" />
           </div>
 
           <AnimatePresence mode="wait">
             {error ? (
               <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                className="bg-red-50 border border-red-100 p-6 text-center space-y-4"
+                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                className="bg-red-500/10 border-2 border-red-500/50 p-8 text-center space-y-6"
               >
-                <div className="inline-flex p-3 bg-red-100 rounded-full">
-                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                <div className="inline-flex p-4 bg-red-500/20">
+                  <AlertTriangle className="w-8 h-8 text-red-500" />
                 </div>
-                <h3 className="text-lg font-black text-red-900 uppercase">Verification Failed</h3>
-                <p className="text-sm font-medium text-red-700 leading-relaxed">{error}</p>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-black text-white uppercase tracking-tighter">Identity Fault</h3>
+                  <p className="text-[10px] font-black text-red-400 uppercase tracking-widest leading-loose">{error}</p>
+                </div>
                 <button 
                   onClick={() => router.push('/worker')}
-                  className="w-full bg-red-600 text-white py-4 text-xs font-black uppercase tracking-widest hover:bg-red-700 transition-all"
+                  className="w-full bg-white text-black py-5 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-brand-secondary transition-all"
                 >
-                  Return to Dashboard
+                  Reset Terminal
                 </button>
               </motion.div>
             ) : success ? (
               <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                className="bg-[#EAF5CE] border border-[#D5ECA5] p-8 text-center space-y-6"
+                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                className="bg-green-500/10 border-2 border-green-500/50 p-10 text-center space-y-8"
               >
-                <div className="inline-flex p-4 bg-[#D5ECA5] rounded-full">
-                  <CheckCircle2 className="w-8 h-8 text-[#567E14]" />
+                <div className="inline-flex p-5 bg-green-500/20">
+                  <CheckCircle2 className="w-10 h-10 text-green-500" />
                 </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-black text-[#2D3128] uppercase">Record Logged</h3>
-                  <p className="text-sm font-medium text-[#567E14]">Segregation data successfully synced to the municipal database.</p>
+                <div className="space-y-4">
+                  <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic">Registry Updated</h3>
+                  <p className="text-[9px] font-black text-green-400 uppercase tracking-[0.3em] leading-relaxed">Resident records successfully synced. Points allocated.</p>
                 </div>
-                <p className="text-[10px] font-black text-[#567E14]/40 uppercase tracking-widest animate-pulse">Redirecting back...</p>
+                <div className="flex flex-col items-center">
+                   <div className="w-full h-1 bg-white/5 overflow-hidden">
+                      <div className="h-full bg-green-500 animate-progress origin-left"></div>
+                   </div>
+                   <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.4em] mt-3 italic">Autonomous Redirection...</p>
+                </div>
               </motion.div>
             ) : (
               <motion.div 
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                className="space-y-8"
+                initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
+                className="space-y-10"
               >
-                <div className="space-y-2">
-                  <p className="text-[10px] font-black text-[#7A7D74] uppercase tracking-[0.2em]">Verification Scan</p>
-                  <h2 className="text-3xl font-black text-[#2D3128] tracking-tight">Log Waste Log</h2>
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] leading-none mb-4 underline underline-offset-8 decoration-brand-secondary">Field Identification Scan</p>
+                  <h2 className="text-5xl font-black text-white tracking-tighter uppercase italic">Log Waste</h2>
                 </div>
 
                 {/* Resident Card */}
-                <div className="bg-[#F9F6F1] p-6 space-y-4 border border-[#E5E2D9] relative">
+                <div className="bg-white/5 p-8 space-y-8 border border-white/10 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-3 bg-brand-secondary text-black font-black text-[9px] uppercase tracking-widest italic shadow-lg">Target Located</div>
+                  
                   {alreadyScanned && (
-                    <div className="absolute top-4 right-4 bg-amber-500/10 border border-amber-500/30 px-2 py-1 flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3 text-amber-600" />
-                      <span className="text-[8px] font-black text-amber-700 uppercase">Logged Today</span>
+                    <div className="absolute bottom-0 left-0 right-0 bg-amber-500/20 border-t border-amber-500/40 p-3 flex items-center justify-center gap-3">
+                      <AlertTriangle className="w-4 h-4 text-amber-500" />
+                      <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">Logged: Valid record already exists</span>
                     </div>
                   )}
                   
-                  <div className="flex items-start gap-4">
-                    <div className="bg-[#4D5443] p-2.5">
-                      <User className="w-5 h-5 text-white" />
+                  <div className="flex items-start gap-6 pt-4">
+                    <div className="bg-white/10 p-4 border border-white/10">
+                      <User className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-[#7A7D74] uppercase tracking-widest mb-1">Resident / Entity</p>
-                      <p className="text-lg font-black text-[#2D3128]">{targetUser?.name || 'Loading...'}</p>
+                      <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Subject Name</p>
+                      <p className="text-2xl font-black text-white uppercase tracking-tighter">{targetUser?.name || 'Loading Identifier...'}</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-4">
-                    <div className="bg-[#4D5443] p-2.5">
-                      <MapPin className="w-5 h-5 text-white" />
+                  
+                  <div className="flex items-start gap-6 pb-4">
+                    <div className="bg-white/10 p-4 border border-white/10">
+                      <MapPin className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-[#7A7D74] uppercase tracking-widest mb-1">Property ID (House No.)</p>
-                      <p className="text-xl font-black text-[#2D3128] tracking-tight">{targetUser?.houseId || targetUser?.shopId || '—'}</p>
+                      <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Residential Plot / Unit</p>
+                      <p className="text-3xl font-black text-brand-secondary tracking-tighter uppercase italic">{targetUser?.houseId || targetUser?.shopId || 'Unregistered'}</p>
                     </div>
                   </div>
                 </div>
 
-                {alreadyScanned && (
-                  <div className="bg-amber-50 p-4 border border-amber-200 flex items-center gap-3">
-                    <AlertTriangle className="w-5 h-5 text-amber-600" />
-                    <p className="text-[10px] font-bold text-amber-800 uppercase leading-relaxed">
-                      Collection has already been verified for this property today. 
-                    </p>
-                  </div>
-                )}
-
                 {/* Actions */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <button 
                     disabled={submitting || alreadyScanned}
                     onClick={() => handleUpdate('proper')}
-                    className="w-full bg-[#4D5443] text-white py-5 px-6 font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all flex items-center justify-between group disabled:opacity-30 disabled:grayscale"
+                    className="w-full bg-green-600 hover:bg-green-500 text-white py-6 px-8 font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl transition-all active:scale-95 flex items-center justify-between group disabled:opacity-20 disabled:grayscale"
                   >
-                    <span>Proper Segregation</span>
-                    <CheckCircle2 className="w-5 h-5 group-hover:scale-125 transition-transform" />
+                    <span>Log Proper (+10)</span>
+                    <CheckCircle2 className="w-6 h-6 group-hover:rotate-12 transition-transform" />
                   </button>
                   <button 
                     disabled={submitting || alreadyScanned}
                     onClick={() => handleUpdate('improper')}
-                    className="w-full bg-white border-2 border-red-200 text-red-600 py-5 px-6 font-black text-xs uppercase tracking-[0.2em] hover:bg-red-50 active:scale-95 transition-all flex items-center justify-between group disabled:opacity-30 disabled:grayscale"
+                    className="w-full bg-red-600 hover:bg-red-500 text-white py-6 px-8 font-black text-[11px] uppercase tracking-[0.4em] transition-all active:scale-95 flex items-center justify-between group disabled:opacity-20 disabled:grayscale border border-red-400/20"
                   >
-                    <span>Improperly Mixed</span>
-                    <XCircle className="w-5 h-5 group-hover:scale-125 transition-transform" />
+                    <span>Log Improper Fault</span>
+                    <XCircle className="w-6 h-6 group-hover:scale-125 transition-transform" />
                   </button>
                 </div>
               </motion.div>
@@ -238,11 +239,17 @@ export default function DirectScanPage() {
           </AnimatePresence>
 
         </div>
+        
+        {/* Decal */}
+        <div className="absolute top-1/2 -left-20 w-40 h-80 bg-brand-secondary/5 blur-[100px] pointer-events-none" />
       </div>
 
-      <p className="mt-8 text-[10px] font-black text-[#7A7D74] uppercase tracking-[0.3em] opacity-40">
-        SegriFy Municipal Infrastructure · Worker Portal
-      </p>
+      <footer className="mt-12 flex flex-col items-center gap-4 opacity-30">
+        <p className="text-[9px] font-black text-white uppercase tracking-[0.6em] italic">
+          SEGRiFY PROTOCOL // FIELD HUB
+        </p>
+        <div className="w-20 h-1 bg-white/10" />
+      </footer>
     </div>
   );
 }
