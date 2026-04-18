@@ -12,7 +12,9 @@ import {
   ShieldCheck, 
   LogOut, 
   Search, 
-  User
+  MessageSquare,
+  User,
+  Gavel
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -56,6 +58,8 @@ export default function MunicipalLayout({ children }: MunicipalLayoutProps) {
         <nav className="flex-1 mt-4">
           <SidebarItem icon={LayoutDashboard} label="Overview" href="/municipal" />
           <SidebarItem icon={Building2} label="Business" href="/municipal/business" />
+          <SidebarItem icon={MessageSquare} label="Complaints" href="/municipal/complaints" />
+          <SidebarItem icon={Gavel} label="Fines" href="/municipal/fines" />
           <SidebarItem icon={History} label="History" href="/municipal/history" />
         </nav>
 

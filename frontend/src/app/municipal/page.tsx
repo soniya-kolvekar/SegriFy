@@ -17,6 +17,12 @@ export default function MunicipalDashboard() {
   const [scannedData, setScannedData] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // Ref to track showConfirm state without triggering useEffect re-runs
+  const showConfirmRef = useRef(false);
+  useEffect(() => {
+    showConfirmRef.current = showConfirm;
+  }, [showConfirm]);
 
   // Load jsQR library from CDN
   useEffect(() => {
@@ -31,6 +37,7 @@ export default function MunicipalDashboard() {
 
   useEffect(() => {
     let animationFrameId: number;
+    let timeoutId: NodeJS.Timeout;
     
     async function startCamera() {
       if (!isScannerActive) return;
@@ -41,8 +48,15 @@ export default function MunicipalDashboard() {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
+
+        // Auto-close if nothing scanned for 15 seconds
+        timeoutId = setTimeout(() => {
+          // Use the ref to check the latest state without being a dependency
+          if (!showConfirmRef.current) {
+            setIsScannerActive(false);
+          }
+        }, 15000);
         
-        // Start QR scanning loop
         const scan = () => {
           if (videoRef.current && canvasRef.current && (window as any).jsQR) {
             const video = videoRef.current;
@@ -63,7 +77,7 @@ export default function MunicipalDashboard() {
                 if (code) {
                   setScannedData(code.data);
                   setShowConfirm(true);
-                  // Don't stop the camera yet, but stop the scan loop
+                  if (timeoutId) clearTimeout(timeoutId);
                   return;
                 }
               }
@@ -75,6 +89,7 @@ export default function MunicipalDashboard() {
 
       } catch (err) {
         console.error("Error accessing camera:", err);
+        setIsScannerActive(false);
       }
     }
 
@@ -84,12 +99,13 @@ export default function MunicipalDashboard() {
     
     return () => {
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      if (timeoutId) clearTimeout(timeoutId);
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [isScannerActive]);
+  }, [isScannerActive]); // Keep dependency array stable at 1 element
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -111,9 +127,7 @@ export default function MunicipalDashboard() {
   }, []);
 
   const handleValidation = (isProper: boolean) => {
-    // Here you would normally send the data to the backend
     console.log(`Scanned QR: ${scannedData}, Proper: ${isProper}`);
-    // Reset scanner
     setIsScannerActive(false);
     setShowConfirm(false);
     setScannedData(null);
@@ -124,7 +138,6 @@ export default function MunicipalDashboard() {
     <div className="flex items-center justify-center min-h-[70vh]">
       <canvas ref={canvasRef} className="hidden" />
       
-      {/* QR Validation Section - Main Focus */}
       <div className="w-full max-w-4xl bg-[#F9F7F2] p-16 border border-[#E5E1D8] flex flex-col relative overflow-hidden">
         {!isScannerActive ? (
           <div className="flex flex-col items-center justify-center text-center py-20">
