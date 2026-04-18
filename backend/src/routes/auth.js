@@ -35,12 +35,11 @@ router.post('/sync', verifyFirebaseToken, async (req, res) => {
       });
     }
 
-    // Generate QR token based on houseId (primary key) so it is unique per house.
-    // Format: HOUSE-<normalized-houseId>-<firebaseUid-suffix>
-    // The QR code payload encodes a JSON string so workers can scan and get full context.
-    const normalizedHouseId = (houseId || shopId || 'NA')
-      .toUpperCase()
-      .trim();
+    const hasId = houseId || shopId;
+    const normalizedHouseId = hasId 
+      ? (houseId || shopId).toUpperCase().trim() 
+      : `PENDING-${firebaseUid.slice(-6)}`; // Unique temporary token for new users
+      
     const qrToken = normalizedHouseId;
     const qrPayload = normalizedHouseId;
 

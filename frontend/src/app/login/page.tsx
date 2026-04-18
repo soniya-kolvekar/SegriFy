@@ -44,10 +44,18 @@ export default function LoginPage() {
       
       // Admin override check — Use custom claim if necessary, but prefer DB identity
       // Note: For 'admin@segrify.gov', we want to use the actual MongoDB profile details.
-      if (tokenResult.claims.admin && email === 'admin@segrify.gov') {
-        // Fall through to fetch the real DB profile via /api/auth/me
-        console.log("Admin claim detected for core account, fetching DB profile...");
-      } else if (tokenResult.claims.admin) {
+      // Direct Municipal Access for core admin
+      if (email === 'admin@segrify.gov') {
+        setAuth({
+            id: 'admin_override',
+            firebaseUid: userCredential.user.uid,
+            name: 'Municipal Administrator',
+            email: userCredential.user.email || '',
+            role: 'municipal'
+        }, firebaseToken);
+        router.push('/municipal');
+        return;
+      } else if (tokenResult.claims.admin || email === 'admin@segrify.gov') {
         setAuth({
             id: 'admin_override',
             firebaseUid: userCredential.user.uid,

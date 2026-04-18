@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema({
   aadhaarNo: { type: String },
   panCard: { type: String, unique: true, sparse: true },
   maskedAadhaar: { type: String },
-  qrToken: { type: String, unique: true },
+  qrToken: { type: String, unique: true, sparse: true },
   qrPayload: { type: String },
 
   points: { type: Number, default: 0 },

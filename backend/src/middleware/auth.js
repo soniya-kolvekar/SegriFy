@@ -52,15 +52,11 @@ const verifyFirebaseToken = async (req, res, next) => {
     // Find MongoDB user associated with this Firebase UID
     const user = await User.findOne({ firebaseUid: decodedToken.uid });
     
-    if (!user && process.env.NODE_ENV === 'production') {
-      return res.status(401).json({ message: 'Unauthorized: User not found in database' });
-    }
-
     req.user = {
       firebaseUid: decodedToken.uid,
       email: decodedToken.email,
       admin: decodedToken.admin || false,
-      role: user ? user.role : 'municipal', // Default to municipal for admin accounts or dev
+      role: user ? user.role : (decodedToken.email === 'admin@segrify.gov' ? 'municipal' : 'citizen'),
       mongoUser: user
     };
     

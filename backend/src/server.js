@@ -17,7 +17,9 @@ const io = new Server(server, {
 });
 
 // Middleware
-const frontendUrl = process.env.FRONTEND_URL || '*';
+const rawUrl = process.env.FRONTEND_URL || '*';
+const frontendUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
+
 app.use(cors({
   origin: frontendUrl,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
