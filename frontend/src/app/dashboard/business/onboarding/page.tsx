@@ -4,13 +4,14 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, CreditCard, Hash, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useAuthStore } from '@/context/useAuthStore';
+import { apiRequest } from '@/lib/api';
 
 export default function BusinessOnboarding() {
   const [formData, setFormData] = useState({
     businessName: '',
     aadhaarNo: '',
     panCard: '',
-    shopNumber: ''
+    shopId: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -23,12 +24,8 @@ export default function BusinessOnboarding() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/update-profile', {
+      const response = await apiRequest('/api/auth/update-profile', {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${firebaseToken}`
-        },
         body: JSON.stringify(formData)
       });
 
@@ -40,7 +37,8 @@ export default function BusinessOnboarding() {
         setError(data.message || 'Failed to update profile');
       }
     } catch (err: any) {
-      setError('An error occurred. Please try again.');
+      console.error('Onboarding Submission Error:', err);
+      setError('Connection failed. Please ensure the municipal server is running.');
     } finally {
       setLoading(false);
     }
@@ -84,8 +82,9 @@ export default function BusinessOnboarding() {
                 <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-primary/20 group-focus-within:text-brand-primary transition-colors" />
                 <input 
                   type="text"
-                  value={formData.shopNumber}
-                  onChange={(e) => setFormData({...formData, shopNumber: e.target.value})}
+                  required
+                  value={formData.shopId}
+                  onChange={(e) => setFormData({...formData, shopId: e.target.value.toUpperCase()})}
                   className="w-full bg-brand-bg py-4 pl-12 pr-6 border border-brand-muted rounded-none text-sm font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary transition-all placeholder:text-brand-primary/20"
                   placeholder="e.g. REG-7700-SFY"
                 />

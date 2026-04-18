@@ -74,7 +74,7 @@ router.patch('/complaints/:id', verifyFirebaseToken, checkRole(['municipal']), a
     const complaint = await Complaint.findByIdAndUpdate(
       req.params.id,
       { $set: updateData },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!complaint) return res.status(404).json({ message: 'Complaint not found' });
@@ -120,7 +120,7 @@ router.post('/inventory', verifyFirebaseToken, checkRole(['municipal']), async (
 
 router.patch('/inventory/:id', verifyFirebaseToken, checkRole(['municipal']), async (req, res) => {
   try {
-    const material = await Material.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const material = await Material.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
     if (!material) return res.status(404).json({ message: 'Material not found' });
     res.json(material);
   } catch (err) {
