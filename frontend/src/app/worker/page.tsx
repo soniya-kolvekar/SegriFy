@@ -47,35 +47,35 @@ export default function WorkerDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-brand-primary p-6 flex flex-col items-center justify-center text-white">
+    <div className="min-h-screen bg-brand-primary p-6 flex flex-col items-center justify-center text-white font-sans antialiased">
       <div className="w-full max-w-md space-y-8">
         {/* Header */}
         <div className="text-center">
-          <div className="bg-brand-accent w-20 h-20 rounded-[2rem] mx-auto flex items-center justify-center shadow-2xl shadow-brand-accent/40 mb-6 border-4 border-white/20">
-            <QrCode className="w-10 h-10" />
+          <div className="bg-white/10 w-20 h-20 rounded-none mx-auto flex items-center justify-center shadow-none mb-6 border-4 border-white/20">
+            <QrCode className="w-10 h-10 text-brand-accent" />
           </div>
-          <h1 className="text-3xl font-heading font-black">Worker Scanner</h1>
-          <p className="text-brand-secondary/70 mt-2 font-medium">Log waste segregation records instantly</p>
+          <h1 className="text-3xl font-black uppercase tracking-tighter">Worker Scanner</h1>
+          <p className="text-white/60 mt-2 font-black text-[10px] uppercase tracking-widest">Log waste segregation records instantly</p>
         </div>
 
         {/* Mock Scanner View */}
-        <div className="relative bg-black rounded-[3rem] aspect-[3/4] overflow-hidden border-8 border-white/10 shadow-2xl group flex items-center justify-center">
+        <div className="relative bg-black rounded-none aspect-[3/4] overflow-hidden border-8 border-white/10 shadow-none group flex items-center justify-center">
           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60"></div>
           
           {/* Scanning Animation */}
-          <div className="absolute inset-x-10 top-20 bottom-20 border-2 border-brand-accent/50 rounded-2xl flex items-center justify-center">
+          <div className="absolute inset-x-10 top-20 bottom-20 border-2 border-brand-accent/30 rounded-none flex items-center justify-center">
              <div className="w-full h-1 bg-brand-accent shadow-[0_0_15px_rgba(249,115,22,0.8)] animate-pulse absolute top-1/2"></div>
-             <Camera className="w-16 h-16 text-white/20 group-hover:scale-110 transition-transform duration-500" />
+             <Camera className="w-16 h-16 text-white/10 group-hover:scale-110 transition-transform duration-500" />
           </div>
 
           <div className="absolute bottom-8 left-0 right-0 px-8">
-            <p className="text-center text-sm font-medium text-white/60 mb-4 bg-white/10 py-2 rounded-full backdrop-blur-sm">Align QR code within the frame</p>
-            <div className="flex bg-white/10 rounded-2xl p-2 backdrop-blur-md">
-              <Search className="w-5 h-5 text-white/40 ml-3 mt-2.5" />
+            <p className="text-center text-[10px] font-black uppercase tracking-widest text-white/40 mb-4 bg-white/5 py-2 rounded-none backdrop-blur-sm border border-white/10">Align code within frame</p>
+            <div className="flex bg-white/10 rounded-none p-2 backdrop-blur-md border border-white/10">
+              <Search className="w-4 h-4 text-white/40 ml-3 mt-3" />
               <input 
                 type="text" 
-                placeholder="Or enter House ID manually..." 
-                className="bg-transparent border-none text-white placeholder:text-white/40 focus:ring-0 p-2.5 flex-1"
+                placeholder="MANUAL HOUSE ID..." 
+                className="bg-transparent border-none text-white font-black text-xs placeholder:text-white/20 focus:ring-0 p-3 flex-1 uppercase tracking-widest"
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
               />
@@ -84,17 +84,17 @@ export default function WorkerDashboard() {
         </div>
 
         {/* Controls */}
-        <div className="bg-white/5 rounded-[2.5rem] p-8 border border-white/10 backdrop-blur-xl">
+        <div className="bg-white/5 rounded-none p-8 border border-white/10 backdrop-blur-xl">
           <div className="grid grid-cols-2 gap-4 mb-8">
             {['wet', 'dry'].map((type) => (
               <button
                 key={type}
                 onClick={() => setWasteType(type)}
                 className={cn(
-                  "py-4 rounded-2xl font-bold capitalize transition-all",
+                  "py-4 rounded-none font-black text-xs uppercase tracking-widest transition-all border",
                   wasteType === type 
-                    ? "bg-brand-accent text-white shadow-lg shadow-brand-accent/20 scale-105" 
-                    : "bg-white/10 text-brand-secondary hover:bg-white/20"
+                    ? "bg-brand-accent text-white border-brand-accent" 
+                    : "bg-white/5 text-white/40 border-white/10 hover:bg-white/10"
                 )}
               >
                 {type} Waste
@@ -106,17 +106,17 @@ export default function WorkerDashboard() {
             <button 
               onClick={() => handleScanSimulation(true)}
               disabled={status === 'loading'}
-              className="w-full py-5 rounded-3xl bg-green-500 hover:bg-green-600 text-white font-black text-lg shadow-xl shadow-green-500/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+              className="w-full py-5 rounded-none bg-green-600 hover:brightness-110 text-white font-black text-sm uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 border border-green-500/30"
             >
-              <CheckCircle2 className="w-6 h-6" />
+              <CheckCircle2 className="w-5 h-5" />
               PROPERLY SEGREGATED
             </button>
             <button 
               onClick={() => handleScanSimulation(false)}
               disabled={status === 'loading'}
-              className="w-full py-5 rounded-3xl bg-red-500 hover:bg-red-600 text-white font-black text-lg shadow-xl shadow-red-500/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+              className="w-full py-5 rounded-none bg-red-600 hover:brightness-110 text-white font-black text-sm uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 border border-red-500/30"
             >
-               <Trash2 className="w-6 h-6" />
+               <Trash2 className="w-5 h-5" />
                IMPROPER SEGREGATION
             </button>
           </div>
@@ -125,13 +125,13 @@ export default function WorkerDashboard() {
 
       {/* Status Toasts */}
       {status === 'success' && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-green-500 text-white px-8 py-4 rounded-full font-bold shadow-2xl animate-in fade-in slide-in-from-bottom-5">
-          Record updated successfully!
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-green-600 text-white px-8 py-4 rounded-none font-black text-[10px] uppercase tracking-widest shadow-2xl animate-in fade-in slide-in-from-bottom-5 border border-green-400/30">
+          Record updated successfully
         </div>
       )}
       {status === 'error' && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-red-500 text-white px-8 py-4 rounded-full font-bold shadow-2xl animate-in fade-in slide-in-from-bottom-5">
-          Failed to update record. Check User ID.
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-8 py-4 rounded-none font-black text-[10px] uppercase tracking-widest shadow-2xl animate-in fade-in slide-in-from-bottom-5 border border-red-400/30">
+          Failed to update record
         </div>
       )}
     </div>

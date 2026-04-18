@@ -26,6 +26,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${publicSans.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="h-full font-sans">{children}</body>
     </html>

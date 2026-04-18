@@ -1,111 +1,188 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Building2, 
-  Package, 
-  DollarSign, 
-  BarChart2, 
+  BarChart3, 
+  Clock, 
+  CheckCircle2, 
+  XCircle, 
+  ArrowUpRight,
   Plus,
-  Clock,
-  CheckCircle,
-  Truck
+  IndianRupee,
+  FileText
 } from 'lucide-react';
+import { useAuthStore } from '@/context/useAuthStore';
+import Link from 'next/link';
+
+interface Request {
+  _id: string;
+  itemType: string;
+  quantity: number;
+  estimatedAmount: number;
+  status: 'Pending' | 'Accepted' | 'Rejected';
+  createdAt: string;
+}
 
 export default function BusinessDashboard() {
+  const [requests, setRequests] = useState<Request[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
+  const { firebaseToken, user } = useAuthStore();
+
+  useEffect(() => {
+    setMounted(true);
+    const fetchRequests = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/business/requests', {
+          headers: { 'Authorization': `Bearer ${firebaseToken}` }
+        });
+        const data = await res.json();
+        setRequests(data);
+      } catch (err) {
+        console.error('Error fetching requests:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRequests();
+  }, [firebaseToken]);
+
+  const stats = [
+    { label: 'Total Requests', value: requests.length, icon: FileText, color: 'text-brand-primary', bg: 'bg-brand-secondary' },
+    { label: 'Sustainability Impact', value: '14.2 Tons', icon: BarChart3, color: 'text-brand-primary', bg: 'bg-brand-secondary' },
+    { label: 'Compliance Score', value: '98%', icon: CheckCircle2, color: 'text-brand-primary', bg: 'bg-brand-secondary' },
+  ];
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Accepted': return 'bg-green-50 text-green-700';
+      case 'Rejected': return 'bg-red-50 text-red-700';
+      default: return 'bg-brand-secondary text-brand-primary/60';
+    }
+  };
+
   return (
-    <div className="p-10 space-y-12">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-4xl font-heading font-black text-brand-primary">Business Portal</h1>
-          <p className="text-brand-muted-foreground mt-2 font-medium">Manage bulk waste collection and service requests.</p>
+    <div className="p-10 space-y-10 max-w-7xl mx-auto">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-primary/40">
+          <span>Dashboard</span>
+          <Plus className="w-2 h-2" />
+          <span>Overview</span>
         </div>
-        <button className="bg-brand-accent text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-3 shadow-xl shadow-brand-accent/20 hover:scale-105 transition-transform">
-          <Plus className="w-5 h-5" />
-          Request Collection
-        </button>
+        <h1 className="text-4xl font-heading font-black text-brand-primary uppercase">Business Waste Management Portal</h1>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {[
-          { label: 'Pending Requests', value: '02', icon: Clock, color: 'bg-orange-500' },
-          { label: 'Completed Services', value: '148', icon: CheckCircle, color: 'bg-green-600' },
-          { label: 'Monthly Expenditure', value: '₹12,450', icon: DollarSign, color: 'bg-brand-primary' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-brand-secondary/30 shadow-sm">
-            <div className={`${stat.color} w-12 h-12 rounded-2xl flex items-center justify-center text-white mb-6`}>
-              <stat.icon className="w-6 h-6" />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        {/* Main Table Section */}
+        <div className="lg:col-span-12 bg-white border border-brand-muted shadow-none p-0 overflow-hidden rounded-none">
+          <div className="p-8 border-b border-brand-muted flex justify-between items-center bg-brand-bg/30">
+            <h2 className="text-xl font-black text-brand-primary uppercase tracking-tight flex items-center gap-3">
+              <FileText className="w-5 h-5 text-brand-primary/40" />
+              Recent Requests
+            </h2>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-brand-secondary/50 text-brand-primary/40 uppercase text-[10px] font-black tracking-widest">
+                  <th className="px-8 py-4">Request ID</th>
+                  <th className="px-6 py-4">Date</th>
+                  <th className="px-6 py-4">Waste Type</th>
+                  <th className="px-6 py-4">Quantity</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-8 py-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-brand-muted">
+                {loading ? (
+                  <tr><td colSpan={6} className="px-8 py-20 text-center font-bold text-brand-primary/40 uppercase tracking-widest text-xs">Loading requests...</td></tr>
+                ) : requests.length === 0 ? (
+                  <tr><td colSpan={6} className="px-8 py-20 text-center font-bold text-brand-primary/40 uppercase tracking-widest text-xs">No records found.</td></tr>
+                ) : requests.map((req) => (
+                  <tr key={req._id} className="hover:bg-brand-bg/50 transition-colors group">
+                    <td className="px-8 py-6 font-black text-brand-primary text-sm">#REQ-{req._id.substring(18).toUpperCase()}</td>
+                    <td className="px-6 py-6 text-xs font-bold text-brand-primary/60">
+                      {mounted ? new Date(req.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '...'}
+                    </td>
+                    <td className="px-6 py-6 font-bold text-brand-primary text-sm">{req.itemType}</td>
+                    <td className="px-6 py-6 font-black text-brand-primary text-sm">{req.quantity} Tons</td>
+                    <td className="px-6 py-6">
+                      <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest border border-current ${getStatusColor(req.status)}`}>
+                        {req.status}
+                      </span>
+                    </td>
+                    <td className="px-8 py-6 text-right">
+                      <button 
+                        onClick={() => setSelectedRequest(req)}
+                        className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest hover:text-brand-primary transition-colors"
+                      >
+                        View Details
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Grid at Bottom */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
+        {stats.map((stat, i) => (
+          <div key={i} className="bg-brand-secondary/50 p-8 border border-brand-muted shadow-none flex flex-col gap-4 group hover:bg-white transition-colors">
+            <p className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest">{stat.label}</p>
+            <div className="flex items-end justify-between">
+              <p className="text-3xl font-black text-brand-primary">{stat.value}</p>
+              <stat.icon className="w-8 h-8 text-brand-primary/10 group-hover:text-brand-primary/20 transition-colors" />
             </div>
-            <p className="text-brand-muted-foreground font-medium text-sm">{stat.label}</p>
-            <p className="text-3xl font-heading font-black text-brand-primary mt-1">{stat.value}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {/* Service Request Form Placeholder */}
-        <div className="bg-white p-10 rounded-[3rem] border border-brand-secondary/30 shadow-sm">
-          <h2 className="text-2xl font-heading font-bold text-brand-primary mb-8 flex items-center gap-3">
-            <Truck className="w-6 h-6 text-brand-accent" />
-            New Bulk Collection Request
-          </h2>
-          <form className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-brand-primary">Waste Category</label>
-                <select className="w-full bg-brand-bg border-none rounded-xl p-4 text-sm font-medium">
-                  <option>Industrial Waste</option>
-                  <option>E-Waste</option>
-                  <option>Organic Bulk</option>
-                </select>
+      {/* View Details Modal */}
+      {selectedRequest && (
+        <div className="fixed inset-0 bg-brand-primary/20 backdrop-blur-sm z-[60] flex items-center justify-center p-6">
+          <div className="bg-white w-full max-w-md border border-brand-muted p-10 space-y-8">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest mb-1">Request Details</p>
+                <h3 className="text-2xl font-black text-brand-primary uppercase">#REQ-{selectedRequest._id.substring(18).toUpperCase()}</h3>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-brand-primary">Estimated Quantity (Tons)</label>
-                <input type="number" placeholder="0.0" className="w-full bg-brand-bg border-none rounded-xl p-4 text-sm font-medium" />
-              </div>
+              <button onClick={() => setSelectedRequest(null)} className="text-brand-primary/40 hover:text-brand-primary transition-colors font-black">CLOSE</button>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-brand-primary">Preferred Pickup DateTime</label>
-              <input type="datetime-local" className="w-full bg-brand-bg border-none rounded-xl p-4 text-sm font-medium" />
-            </div>
-            <div className="bg-brand-secondary/20 p-6 rounded-2xl border border-dotted border-brand-secondary">
-              <div className="flex justify-between items-center text-brand-primary font-black">
-                <span>Estimated Cost</span>
-                <span className="text-2xl">₹2,400.00</span>
-              </div>
-              <p className="text-xs text-brand-muted-foreground mt-1">*Based on municipal corporate pricing guidelines</p>
-            </div>
-            <button className="w-full py-5 bg-brand-primary text-white font-black rounded-2xl shadow-xl shadow-brand-primary/20">
-              Submit Request
-            </button>
-          </form>
-        </div>
 
-        {/* Request Tracking */}
-        <div className="bg-white p-10 rounded-[3rem] border border-brand-secondary/30 shadow-sm">
-            <h2 className="text-2xl font-heading font-bold text-brand-primary mb-8">Active Services</h2>
             <div className="space-y-6">
-              {[
-                { id: 'SR-1025', status: 'In Transit', progress: 80, eta: '15 mins' },
-                { id: 'SR-1024', status: 'Confirmed', progress: 30, eta: '2 hours' },
-              ].map((service, i) => (
-                <div key={i} className="p-6 bg-brand-bg/50 rounded-2xl border border-brand-secondary/10">
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-sm font-black text-brand-primary">{service.id}</span>
-                    <span className="px-3 py-1 bg-brand-accent/10 text-brand-accent text-xs font-black uppercase rounded-full">{service.status}</span>
-                  </div>
-                  <div className="w-full bg-white rounded-full h-2.5 mb-2">
-                    <div className="bg-brand-accent h-2.5 rounded-full" style={{ width: `${service.progress}%` }}></div>
-                  </div>
-                  <div className="flex justify-between text-[10px] font-bold text-brand-muted-foreground">
-                    <span>Pickup Requested</span>
-                    <span>ETA: {service.eta}</span>
-                  </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black text-brand-primary/40 uppercase tracking-widest">Type</p>
+                  <p className="font-bold text-brand-primary">{selectedRequest.itemType}</p>
                 </div>
-              ))}
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black text-brand-primary/40 uppercase tracking-widest">Quantity</p>
+                  <p className="font-bold text-brand-primary">{selectedRequest.quantity} Tons</p>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[9px] font-black text-brand-primary/40 uppercase tracking-widest">Estimated Value</p>
+                <p className="text-xl font-black text-brand-primary">₹{selectedRequest.estimatedAmount.toLocaleString()}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[9px] font-black text-brand-primary/40 uppercase tracking-widest">Current Status</p>
+                <p className="font-black text-brand-primary uppercase tracking-widest text-sm underline underline-offset-4 decoration-2 decoration-brand-accent">{selectedRequest.status}</p>
+              </div>
             </div>
+
+            {selectedRequest.status === 'Accepted' && (
+              <button className="w-full bg-brand-primary text-white py-4 font-black uppercase tracking-widest text-sm hover:brightness-110 transition-all">
+                Make Payment
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

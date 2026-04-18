@@ -1,6 +1,6 @@
-@import "tailwindcss/base";
-@import "tailwindcss/components";
-@import "tailwindcss/utilities";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
   :root {
@@ -42,7 +42,7 @@
     --input: 204 210 198;
     --ring: var(--dark-khaki);
     
-    --radius: 1rem;
+    --radius: 0rem;
   }
 }
 
@@ -58,14 +58,16 @@
   }
 }
 
-.glass-card {
-  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-sm;
-}
+@layer components {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-sm;
+  }
 
-.calendar-cell-proper {
-  @apply bg-green-100 border-green-200 text-green-700;
-}
+  .calendar-cell-proper {
+    @apply bg-green-100 border-green-200 text-green-700;
+  }
 
-.calendar-cell-improper {
-  @apply bg-red-100 border-red-200 text-red-700;
+  .calendar-cell-improper {
+    @apply bg-red-100 border-red-200 text-red-700;
+  }
 }

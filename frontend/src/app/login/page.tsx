@@ -77,51 +77,51 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-brand-bg flex items-center justify-center p-6">
-      <div className="w-full max-w-[480px] bg-white p-12 rounded-[3.5rem] shadow-2xl shadow-brand-primary/10 border border-brand-secondary/20 relative overflow-hidden">
-        <div className="absolute -top-20 -right-20 w-64 h-64 bg-brand-secondary/20 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-brand-accent/5 rounded-full blur-3xl"></div>
+      <div className="w-full max-w-[480px] bg-white p-12 rounded-none shadow-none border border-brand-muted relative overflow-hidden">
+        <div className="absolute -top-20 -right-20 w-64 h-64 bg-brand-secondary/20 rounded-none blur-3xl"></div>
+        <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-brand-accent/5 rounded-none blur-3xl"></div>
 
         <div className="relative z-10 w-full">
           <div className="flex flex-col items-center mb-10 text-center">
-            <div className="bg-brand-primary p-4 rounded-3xl mb-6 shadow-xl shadow-brand-primary/20">
+            <div className="bg-brand-primary p-4 rounded-none mb-6 shadow-none">
               <Leaf className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-4xl font-heading font-black text-brand-primary">SegriFy</h1>
-            <p className="text-brand-muted-foreground mt-3 font-medium">Join the real-time waste revolution</p>
+            <h1 className="text-4xl font-heading font-black text-brand-primary uppercase tracking-tighter">SegriFy</h1>
+            <p className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest mt-2">Join the real-time waste revolution</p>
           </div>
 
           {error && (
-            <div className="bg-red-50 text-red-500 p-4 rounded-2xl text-sm font-bold mb-8 text-center border border-red-100">
+            <div className="bg-red-50 text-red-700 p-4 rounded-none text-[10px] font-black uppercase tracking-widest mb-8 text-center border border-red-100">
               {error}
             </div>
           )}
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-brand-primary ml-1">Email Address</label>
+              <label className="text-[10px] font-black text-brand-primary uppercase tracking-widest ml-1">Email Address</label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-muted-foreground" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-primary/40" />
                 <input 
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com" 
-                  className="w-full bg-brand-bg py-5 pl-12 pr-6 rounded-2xl border-none text-sm font-medium focus:ring-2 focus:ring-brand-accent transition-all"
+                  className="w-full bg-brand-bg py-4 pl-12 pr-6 rounded-none border border-brand-muted text-sm font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary transition-all"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-brand-primary ml-1">Password</label>
+              <label className="text-[10px] font-black text-brand-primary uppercase tracking-widest ml-1">Password</label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-muted-foreground" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-primary/40" />
                 <input 
                   type="password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••" 
-                  className="w-full bg-brand-bg py-5 pl-12 pr-6 rounded-2xl border-none text-sm font-medium focus:ring-2 focus:ring-brand-accent transition-all"
+                  className="w-full bg-brand-bg py-4 pl-12 pr-6 rounded-none border border-brand-muted text-sm font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary transition-all"
                   required
                 />
               </div>
@@ -130,16 +130,16 @@ export default function LoginPage() {
             <button 
               type="submit"
               disabled={loading}
-              className="w-full bg-brand-primary py-5 rounded-3xl text-white font-black text-lg shadow-xl shadow-brand-primary/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 group disabled:opacity-50"
+              className="w-full bg-brand-primary py-5 rounded-none text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-brand-primary/10 hover:brightness-110 transition-all flex items-center justify-center gap-3 group disabled:opacity-50"
             >
               {loading ? 'Authenticating...' : 'Sign In'}
-              <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
           </form>
 
           <div className="mt-12 text-center">
-            <p className="text-sm text-brand-muted-foreground font-medium">
-              Don't have an account? <span className="text-brand-accent font-black hover:underline cursor-pointer" onClick={() => router.push('/signup')}>Start Segregating</span>
+            <p className="text-[10px] text-brand-primary/40 font-black uppercase tracking-widest">
+              Don't have an account? <span className="text-brand-primary hover:underline cursor-pointer" onClick={() => router.push('/signup')}>Start Segregating</span>
             </p>
           </div>
         </div>
