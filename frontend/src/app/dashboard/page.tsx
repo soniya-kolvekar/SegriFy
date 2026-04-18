@@ -149,11 +149,11 @@ export default function HomeownerDashboard() {
               </button>
             </div>
 
-            {profile?.qrPayload || profile?.qrToken ? (
+            {profile?.qrToken ? (
               <div className="bg-[#F5F4F0] p-4 rounded-none">
                 <QRCodeCanvas 
                   id="homeowner-qr"
-                  value={profile.qrPayload || profile.qrToken} 
+                  value={typeof window !== 'undefined' ? `${window.location.origin}/worker/scan/${profile.qrToken}` : profile.qrToken} 
                   size={140} 
                   level="H"
                   includeMargin={true}

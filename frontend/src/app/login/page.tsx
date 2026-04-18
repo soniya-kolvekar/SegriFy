@@ -11,6 +11,7 @@ import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 const cn = (...c: any[]) => c.filter(Boolean).join(' ');
 
@@ -23,9 +24,15 @@ export default function LoginPage() {
   let isAdmin = false;
   const router = useRouter();
   const { user, setAuth } = useAuthStore();
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams.get('redirect');
 
   useEffect(() => {
     if (user) {
+      if (redirectPath) {
+        router.replace(redirectPath);
+        return;
+      }
       if (user.role === 'municipal') router.replace('/municipal');
       else if (user.role === 'worker') router.replace('/worker');
       else if (user.role === 'business') router.replace('/dashboard/business');
@@ -66,7 +73,9 @@ export default function LoginPage() {
         const role = finalUser.role || 'citizen';
         const hasIdentity = finalUser.houseId || finalUser.shopId || finalUser.role === 'municipal';
 
-        if (role === 'municipal') {
+        if (redirectPath) {
+          router.push(redirectPath);
+        } else if (role === 'municipal') {
           router.push('/municipal');
         } else if (role === 'worker') {
           router.push('/worker');

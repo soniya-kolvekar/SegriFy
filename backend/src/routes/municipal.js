@@ -4,6 +4,7 @@ const MaterialRequest = require('../models/MaterialRequest');
 const Complaint = require('../models/Complaint');
 const Fine = require('../models/Fine');
 const Material = require('../models/Material');
+const SegregationRecord = require('../models/SegregationRecord');
 const { verifyFirebaseToken, checkRole } = require('../middleware/auth');
 
 // Get all material requests (Pending and Accepted/Logistics)
@@ -132,6 +133,63 @@ router.delete('/inventory/:id', verifyFirebaseToken, checkRole(['municipal']), a
     const material = await Material.findByIdAndDelete(req.params.id);
     if (!material) return res.status(404).json({ message: 'Material not found' });
     res.json({ message: 'Material deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Unified Activity History / Audit Trail
+router.get('/history', verifyFirebaseToken, checkRole(['municipal']), async (req, res) => {
+  try {
+    // 1. Fetch latest data from all major collections
+    const [complaints, requests, fines, wasteLogs] = await Promise.all([
+      Complaint.find().populate('userId', 'name').sort({ createdAt: -1 }).limit(30),
+      MaterialRequest.find().populate('userId', 'name').sort({ createdAt: -1 }).limit(30),
+      Fine.find().populate('userId', 'name').sort({ issuedAt: -1 }).limit(30),
+      SegregationRecord.find().populate('userId', 'name').sort({ date: -1 }).limit(50)
+    ]);
+
+    // 2. Transform into a unified "Activity" format
+    const activities = [
+      ...complaints.map(c => ({
+        id: c._id,
+        type: 'complaint',
+        title: `Complaint: ${c.subject}`,
+        detail: `Resident ${c.userId?.name || 'Unknown'} - ${c.description.substring(0, 50)}...`,
+        status: c.status,
+        date: c.createdAt
+      })),
+      ...requests.map(r => ({
+        id: r._id,
+        type: 'business',
+        title: `Material Request: ${r.itemType}`,
+        detail: `Business ${r.userId?.name || 'Unknown'} requested ${r.quantity}kg`,
+        status: r.status,
+        date: r.createdAt
+      })),
+      ...fines.map(f => ({
+        id: f._id,
+        type: 'enforcement',
+        title: `Fine Issued: ${f.reason}`,
+        detail: `Amount: ₹${f.amount} to Resident ${f.userId?.name || 'Unknown'}`,
+        status: f.status,
+        date: f.issuedAt
+      })),
+      ...wasteLogs.map(w => ({
+        id: w._id,
+        type: 'logistics',
+        title: `Waste Logged: ${w.status.toUpperCase()}`,
+        detail: `Citizen ${w.userId?.name || 'Unknown'} segregation quality record`,
+        status: w.status,
+        date: w.date
+      }))
+    ];
+
+    // 3. Sort by date descending
+    activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    // 4. Limit to top 100 recent events
+    res.json(activities.slice(0, 100));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
