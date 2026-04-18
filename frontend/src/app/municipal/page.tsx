@@ -1,33 +1,124 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Users, 
-  Trash2, 
-  Activity, 
-  Map, 
-  Search,
   CheckCircle2,
   XCircle,
-  BarChart3
+  QrCode
 } from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  PieChart, 
-  Pie, 
-  Cell 
-} from 'recharts';
 import { useAuthStore } from '@/context/useAuthStore';
 
 export default function MunicipalDashboard() {
   const [analytics, setAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isScannerActive, setIsScannerActive] = useState(false);
+  const [validationType, setValidationType] = useState<'proper' | 'improper' | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [scannedData, setScannedData] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  
+  // Aggressive Camera Shutdown Function
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        track.stop();
+        console.log(`Camera Track ${track.label} SHUT DOWN.`);
+      });
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+  // Ref to track showConfirm state without triggering useEffect re-runs unnecessarily
+  const showConfirmRef = useRef(false);
+  useEffect(() => {
+    showConfirmRef.current = showConfirm;
+  }, [showConfirm]);
+
+  // Load jsQR library from CDN
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  useEffect(() => {
+    let animationFrameId: number;
+    let timeoutId: NodeJS.Timeout;
+    
+    async function startCamera() {
+      // ONLY start if scanner is active AND we are NOT in the confirmation phase
+      if (!isScannerActive || showConfirm) return;
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
+        });
+        streamRef.current = stream; // Store in ref for global access
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+
+        // Auto-close if nothing scanned for 15 seconds
+        timeoutId = setTimeout(() => {
+          if (!showConfirmRef.current) {
+            setIsScannerActive(false);
+          }
+        }, 15000);
+        
+        const scan = () => {
+          if (videoRef.current && canvasRef.current && (window as any).jsQR) {
+            const video = videoRef.current;
+            const canvas = canvasRef.current;
+            const context = canvas.getContext('2d');
+            
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+              canvas.height = video.videoHeight;
+              canvas.width = video.videoWidth;
+              context?.drawImage(video, 0, 0, canvas.width, canvas.height);
+              
+              const imageData = context?.getImageData(0, 0, canvas.width, canvas.height);
+              if (imageData) {
+                const code = (window as any).jsQR(imageData.data, imageData.width, imageData.height, {
+                  inversionAttempts: "dontInvert",
+                });
+                
+                if (code) {
+                  setScannedData(code.data);
+                  setShowConfirm(true);
+                  if (timeoutId) clearTimeout(timeoutId);
+                  return; // Stop scan loop
+                }
+              }
+            }
+          }
+          animationFrameId = requestAnimationFrame(scan);
+        };
+        animationFrameId = requestAnimationFrame(scan);
+
+      } catch (err) {
+        console.error("Error accessing camera:", err);
+        setIsScannerActive(false);
+      }
+    }
+
+    if (isScannerActive && !showConfirm) {
+      startCamera();
+    }
+    
+    return () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      if (timeoutId) clearTimeout(timeoutId);
+      stopCamera(); // Aggressive shutdown on cleanup
+    };
+  }, [isScannerActive, showConfirm]); // Correct dependencies to manage camera lifecycle
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -35,9 +126,7 @@ export default function MunicipalDashboard() {
       if (!token) return;
       try {
         const response = await fetch('http://localhost:5000/api/dashboard/analytics/city', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
         setAnalytics(data);
@@ -50,163 +139,121 @@ export default function MunicipalDashboard() {
     fetchAnalytics();
   }, []);
 
-  if (loading) return <div className="p-12 text-brand-primary font-bold animate-pulse">Scanning City Data...</div>;
-
-  const complianceData = [
-    { name: 'Proper', value: analytics?.properCount || 0 },
-    { name: 'Improper', value: analytics?.improperCount || 0 },
-  ];
-
-  const wasteData = analytics?.wasteDistribution?.map((item: any) => ({
-    name: item._id.charAt(0).toUpperCase() + item._id.slice(1),
-    amount: item.count
-  })) || [];
-
-  const COLORS = ['#2D4C3E', '#F97316'];
+  const handleValidation = (isProper: boolean) => {
+    console.log(`Scanned QR: ${scannedData}, Proper: ${isProper}`);
+    stopCamera(); // SHUT DOWN IMMEDIATELY
+    setIsScannerActive(false);
+    setShowConfirm(false);
+    setScannedData(null);
+    setValidationType(null);
+  };
 
   return (
-    <div className="p-10 space-y-12 bg-brand-bg font-sans antialiased">
-      {/* City Overview */}
-      <div className="flex justify-between items-center border-b border-brand-muted pb-8">
-        <div>
-          <p className="text-[10px] font-black text-brand-primary/40 uppercase tracking-[0.2em] mb-2">Central Command</p>
-          <h1 className="text-4xl font-black text-brand-primary uppercase tracking-tight">City Analytics</h1>
-          <p className="text-brand-primary/60 mt-2 text-sm font-bold uppercase tracking-tight">Real-time monitoring of waste management across city zones.</p>
-        </div>
-        <button className="bg-brand-primary text-white px-8 py-4 rounded-none font-black text-xs uppercase tracking-widest flex items-center gap-3 shadow-none border border-brand-muted hover:brightness-110 transition-all">
-          <Map className="w-4 h-4" />
-          Live Zone Map
-        </button>
-      </div>
-
-      {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        {[
-          { label: 'Total Scans', value: analytics?.totalRecords || 0, delta: '+12%', icon: Trash2 },
-          { label: 'Compliance Rate', value: `${analytics?.properRate || 0}%`, delta: '+5.4%', icon: CheckCircle2 },
-          { label: 'Active Complaints', value: '24', delta: '-8%', icon: Activity },
-          { label: 'Active Residents', value: analytics?.activeUsers || 0, delta: '+120', icon: Users },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white p-8 rounded-none border border-brand-muted shadow-none relative overflow-hidden group">
-            <div className="relative z-10">
-              <div className="bg-brand-primary/10 w-12 h-12 rounded-none border border-brand-primary/10 flex items-center justify-center text-brand-primary mb-6 group-hover:bg-brand-primary group-hover:text-white transition-colors">
-                <stat.icon className="w-5 h-5" />
-              </div>
-              <p className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest">{stat.label}</p>
-              <div className="flex items-end gap-3 mt-1">
-                <p className="text-3xl font-black text-brand-primary uppercase tracking-tighter">{stat.value}</p>
-                <span className="text-green-600 text-[10px] font-black mb-1.5 uppercase">{stat.delta}</span>
-              </div>
+    <div className="flex items-center justify-center min-h-[50vh] lg:min-h-[70vh]">
+      <canvas ref={canvasRef} className="hidden" />
+      
+      <div className="w-full max-w-4xl bg-[#F9F7F2] p-6 lg:p-16 border border-[#E5E1D8] flex flex-col relative overflow-hidden shadow-sm">
+        {!isScannerActive ? (
+          <div className="flex flex-col items-center justify-center text-center py-10 lg:py-20">
+            <div className="w-20 h-20 lg:w-32 lg:h-32 bg-white flex items-center justify-center text-brand-primary border border-gray-100 mb-6 lg:mb-10 shadow-sm">
+              <QrCode className="w-10 h-10 lg:w-16 lg:h-16" />
             </div>
+            <h3 className="text-2xl lg:text-4xl font-black text-brand-primary tracking-tight mb-4 uppercase">QR Validation Node</h3>
+            <p className="text-sm lg:text-lg font-medium text-gray-400 mb-8 lg:mb-12 max-w-md">Point the camera at a house QR code to start the segregation check.</p>
+            <button 
+              onClick={() => setIsScannerActive(true)}
+              className="w-full lg:w-auto bg-brand-primary text-white px-8 lg:px-12 py-4 lg:py-6 font-bold text-xs lg:text-sm uppercase tracking-widest shadow-lg shadow-brand-primary/10 hover:scale-105 transition-transform"
+            >
+              Scan QR Code
+            </button>
           </div>
-        ))}
-      </div>
+        ) : (
+          <div className="flex flex-col">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6 lg:mb-10 border-b border-[#E5E1D8] pb-6 lg:pb-8 relative gap-4">
+              <div className="flex items-center gap-4 lg:gap-5">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-white flex items-center justify-center text-brand-primary border border-gray-100">
+                  <QrCode className="w-5 h-5 lg:w-6 lg:h-6" />
+                </div>
+                <h3 className="text-lg lg:text-2xl font-black text-brand-primary tracking-tight uppercase">
+                  {showConfirm ? 'Validation' : 'Active Scan'}
+                </h3>
+              </div>
+              
+              {/* Close Button */}
+              <button 
+                onClick={() => {
+                  stopCamera(); // SHUT DOWN IMMEDIATELY
+                  setIsScannerActive(false);
+                  setShowConfirm(false);
+                  setScannedData(null);
+                }} 
+                className="group flex items-center gap-2 bg-white border border-gray-100 px-4 py-2 hover:bg-red-50 hover:border-red-100 transition-all shadow-sm"
+              >
+                <XCircle className="w-4 h-4 text-gray-400 group-hover:text-red-600" />
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest group-hover:text-red-600">Close</span>
+              </button>
+            </div>
 
-      {/* Analytics Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        <div className="lg:col-span-7 bg-white p-10 rounded-none border border-brand-muted shadow-none">
-          <h2 className="text-xl font-black text-brand-primary uppercase tracking-tight mb-10 flex items-center gap-3 border-b border-brand-muted pb-6">
-            <BarChart3 className="w-5 h-5 text-brand-primary/40" />
-            Waste Distribution
-          </h2>
-          <div className="h-[350px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={wasteData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#5C5D47', fontSize: 10, fontWeight: 900}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#5C5D47', fontSize: 10, fontWeight: 900}} />
-                <Tooltip 
-                  contentStyle={{borderRadius: '0', border: '1px solid #5C5D47', background: '#F9F7F2'}}
+            {!showConfirm ? (
+              <div className="aspect-[4/3] lg:aspect-video bg-black mb-6 lg:mb-10 relative overflow-hidden shadow-inner border-4 lg:border-8 border-white">
+                <video 
+                  ref={videoRef}
+                  autoPlay 
+                  playsInline 
+                  muted
+                  className="w-full h-full object-cover opacity-90"
                 />
-                <Bar dataKey="amount" fill="#5C5D47" radius={0} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="lg:col-span-5 bg-white p-10 rounded-none border border-brand-muted shadow-none">
-          <h2 className="text-xl font-black text-brand-primary uppercase tracking-tight mb-10 border-b border-brand-muted pb-6">Compliance Rate</h2>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={complianceData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={80}
-                  outerRadius={120}
-                  paddingAngle={0}
-                  dataKey="value"
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-48 h-48 lg:w-72 lg:h-72 border-2 border-white/30 relative">
+                    <div className="absolute -top-1 -left-1 w-8 h-8 lg:w-12 lg:h-12 border-t-4 lg:border-t-8 border-l-4 lg:border-l-8 border-white" />
+                    <div className="absolute -top-1 -right-1 w-8 h-8 lg:w-12 lg:h-12 border-t-4 lg:border-t-8 border-r-4 lg:border-r-8 border-white" />
+                    <div className="absolute -bottom-1 -left-1 w-8 h-8 lg:w-12 lg:h-12 border-b-4 lg:border-b-8 border-l-4 lg:border-l-8 border-white" />
+                    <div className="absolute -bottom-1 -right-1 w-8 h-8 lg:w-12 lg:h-12 border-b-4 lg:border-b-8 border-r-4 lg:border-r-8 border-white" />
+                  </div>
+                </div>
+                <div className="absolute bottom-4 lg:bottom-6 left-1/2 -translate-x-1/2 bg-white/20 backdrop-blur-md px-4 lg:px-6 py-2 text-[8px] lg:text-[10px] font-black text-white uppercase tracking-widest whitespace-nowrap">
+                  Detecting Identity...
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white p-6 lg:p-12 border-2 border-brand-primary text-center animate-in fade-in zoom-in duration-200 shadow-2xl">
+                <div className="w-12 h-12 lg:w-16 lg:h-16 bg-brand-primary/10 text-brand-primary flex items-center justify-center mx-auto mb-4 lg:mb-6">
+                   <QrCode className="w-6 h-6 lg:w-8 lg:h-8" />
+                </div>
+                <p className="text-[10px] lg:text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Identity Verified</p>
+                <h4 className="text-lg lg:text-xl font-black text-brand-primary mb-6 lg:mb-8 break-all">{scannedData}</h4>
+                
+                <p className="text-xl lg:text-2xl font-bold text-brand-primary mb-8 lg:mb-10 leading-tight">
+                  Is the waste properly segregated?
+                </p>
+                
+                <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+                  <button 
+                    onClick={() => handleValidation(true)}
+                    className="flex-1 bg-green-600 text-white py-4 lg:py-6 text-xs lg:text-sm font-black uppercase tracking-widest shadow-lg shadow-green-600/10 hover:bg-green-700 transition-all flex items-center justify-center gap-3"
+                  >
+                    <CheckCircle2 className="w-5 h-5" />
+                    Yes
+                  </button>
+                  <button 
+                    onClick={() => handleValidation(false)}
+                    className="flex-1 bg-red-600 text-white py-4 lg:py-6 text-xs lg:text-sm font-black uppercase tracking-widest shadow-lg shadow-red-600/10 hover:bg-red-700 transition-all flex items-center justify-center gap-3"
+                  >
+                    <XCircle className="w-5 h-5" />
+                    No
+                  </button>
+                </div>
+                
+                <button 
+                  onClick={() => { setShowConfirm(false); setScannedData(null); }}
+                  className="mt-8 text-[10px] font-black text-gray-300 uppercase tracking-widest hover:text-brand-primary transition-colors"
                 >
-                  {complianceData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={index === 0 ? '#5C5D47' : '#F9F7F2'} stroke="#5C5D47" strokeWidth={2} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+                  Rescan QR
+                </button>
+              </div>
+            )}
           </div>
-          <div className="flex justify-center gap-10 mt-6">
-             <div className="text-center">
-                <p className="text-3xl font-black text-brand-primary">{analytics?.properCount || 0}</p>
-                <p className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest">Properly Segregated</p>
-             </div>
-             <div className="text-center">
-                <p className="text-3xl font-black text-brand-primary/20">{analytics?.improperCount || 0}</p>
-                <p className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest">Improper Mixed</p>
-             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Resident Table */}
-      <div className="bg-white rounded-none border border-brand-muted shadow-none overflow-hidden">
-        <div className="p-10 flex justify-between items-center border-b border-brand-muted bg-brand-bg/50">
-          <h2 className="text-xl font-black text-brand-primary uppercase tracking-tight">Residential Compliance</h2>
-          <div className="flex bg-white px-5 py-3 rounded-none w-96 border border-brand-muted">
-            <Search className="w-4 h-4 text-brand-primary/20" />
-            <input type="text" placeholder="Search House ID..." className="bg-transparent border-none focus:ring-0 px-3 text-[10px] font-black uppercase tracking-widest w-full placeholder:text-brand-primary/20" />
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-brand-secondary/50 text-brand-primary/40 text-[9px] font-black uppercase tracking-[0.2em]">
-                <th className="px-10 py-6">Resident Identity</th>
-                <th className="px-6 py-6">ID</th>
-                <th className="px-6 py-6">Zone</th>
-                <th className="px-6 py-6">Status</th>
-                <th className="px-6 py-6">Score</th>
-                <th className="px-10 py-6 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-brand-muted">
-              {[
-                { name: 'Adarsh Kumar', id: '#4521', zone: 'Sector 4', status: 'Eligible', points: '1250' },
-                { name: 'Sarah Joseph', id: '#8922', zone: 'Old Town', status: 'Warning', points: '840' },
-                { name: 'Vikram Singh', id: '#1230', zone: 'Sector 2', status: 'Ineligible', points: '120' },
-              ].map((row, i) => (
-                <tr key={i} className="hover:bg-brand-bg/50 transition-colors group">
-                  <td className="px-10 py-6 font-black text-brand-primary text-xs uppercase">{row.name}</td>
-                  <td className="px-6 py-6 text-[10px] font-bold text-brand-primary/60 uppercase">{row.id}</td>
-                  <td className="px-6 py-6 text-[10px] font-bold text-brand-primary/60 uppercase">{row.zone}</td>
-                  <td className="px-6 py-6">
-                    <span className={`px-3 py-1 text-[8px] font-black uppercase tracking-widest border border-current ${
-                      row.status === 'Eligible' ? 'bg-green-50 text-green-700' : 
-                      row.status === 'Warning' ? 'bg-orange-50 text-orange-700' : 'bg-red-50 text-red-700'
-                    }`}>
-                      {row.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-6 font-black text-brand-primary text-xs uppercase">{row.points}</td>
-                  <td className="px-10 py-6 text-right">
-                    <button className="text-[10px] font-black text-brand-primary uppercase tracking-widest hover:underline underline-offset-4">View Records</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        )}
       </div>
     </div>
   );
