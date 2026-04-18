@@ -97,7 +97,6 @@ export default function Sidebar() {
           </div>
           <div className="overflow-hidden">
             <p className="text-xs font-black text-brand-primary truncate">{user?.businessName || user?.name}</p>
-            <p className="text-[10px] font-medium text-brand-primary/60 uppercase">Premium Member</p>
           </div>
         </div>
 

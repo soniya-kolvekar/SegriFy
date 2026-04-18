@@ -81,9 +81,6 @@ export default function BusinessDashboard() {
               <FileText className="w-5 h-5 text-brand-primary/40" />
               Recent Requests
             </h2>
-            <button className="text-[10px] font-black text-brand-primary/60 uppercase tracking-widest hover:text-brand-primary transition-colors">
-              Export CSV
-            </button>
           </div>
           
           <div className="overflow-x-auto">
@@ -170,7 +167,7 @@ export default function BusinessDashboard() {
               </div>
               <div className="space-y-1">
                 <p className="text-[9px] font-black text-brand-primary/40 uppercase tracking-widest">Estimated Value</p>
-                <p className="text-xl font-black text-brand-primary">${selectedRequest.estimatedAmount.toLocaleString()}</p>
+                <p className="text-xl font-black text-brand-primary">₹{selectedRequest.estimatedAmount.toLocaleString()}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-[9px] font-black text-brand-primary/40 uppercase tracking-widest">Current Status</p>

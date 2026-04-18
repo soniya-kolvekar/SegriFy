@@ -132,10 +132,10 @@ export default function MaterialRequestPage() {
                     min="0"
                     value={quantity}
                     onChange={(e) => setQuantity(Number(e.target.value))}
-                    className="w-full bg-brand-bg py-4 px-5 rounded-none border border-brand-muted text-sm font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary transition-all pr-12"
+                    className="w-full bg-brand-bg py-4 px-5 rounded-none border border-brand-muted text-sm font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary transition-all pr-24"
                     placeholder="0"
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-brand-primary/40 uppercase">kg</span>
+                  <span className="absolute right-10 top-1/2 -translate-y-1/2 text-[10px] font-black text-brand-primary/40 uppercase">tonnes</span>
                 </div>
               </div>
 
@@ -151,7 +151,7 @@ export default function MaterialRequestPage() {
             <div className="bg-brand-secondary/30 p-8 border-l-4 border-brand-primary space-y-2 rounded-none">
               <div className="flex justify-between items-end">
                 <p className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest">Estimated Incentive</p>
-                <p className="text-3xl font-black text-brand-primary tracking-tighter">${estimatedAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                <p className="text-3xl font-black text-brand-primary tracking-tighter">₹{estimatedAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
               </div>
               <p className="text-[9px] text-brand-primary/40 font-bold leading-relaxed">
                 Calculated based on current commercial rates for {selectedMaterial.toLowerCase()} materials.

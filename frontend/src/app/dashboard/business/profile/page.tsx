@@ -81,9 +81,6 @@ export default function BusinessProfilePage() {
             <p className="text-brand-primary/60 font-bold text-sm mt-1 uppercase tracking-tight">Manage your legal entity information, tax identifiers, and verified commercial locations.</p>
           </div>
           <div className="flex gap-4">
-             <span className="bg-brand-primary text-white px-4 py-1 text-[8px] font-black uppercase tracking-widest flex items-center gap-2">
-               <Leaf className="w-3 h-3 text-brand-secondary" /> Premium Member
-             </span>
           </div>
         </div>
       </div>
@@ -213,38 +210,7 @@ export default function BusinessProfilePage() {
               <p className="text-2xl font-black text-brand-primary uppercase tracking-tight leading-tight">Sector 12 Industrial Estate, <br/> Block C, Warehouse 42A</p>
               <p className="text-brand-primary/60 font-bold text-sm uppercase tracking-tight">New Delhi, NCR - 110044, India</p>
             </div>
-            <div className="flex gap-4">
-              <button className="bg-brand-primary text-white px-6 py-3 text-[10px] font-black uppercase tracking-widest">Manage Schedule</button>
-              <button className="bg-brand-secondary text-brand-primary px-6 py-3 text-[10px] font-black uppercase tracking-widest border border-brand-muted">View Logs</button>
-            </div>
           </div>
-          <div className="w-full md:w-96 aspect-video bg-brand-secondary/50 border border-brand-muted flex items-center justify-center">
-             <MapPin className="w-10 h-10 text-brand-primary/20" />
-             <span className="text-[10px] font-black text-brand-primary/20 uppercase tracking-widest ml-2">Location Map Placeholder</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Compliance & Records */}
-      <div className="space-y-6">
-        <div className="flex justify-between items-end">
-          <h2 className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest">Compliance & Records</h2>
-          <button className="text-[10px] font-black text-brand-primary uppercase tracking-widest border border-brand-muted px-4 py-2 hover:bg-brand-bg transition-colors">Upload New Certificate</button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            { name: 'Waste Management License', date: 'Valid until Dec 2025' },
-            { name: 'ISO 14001:2015 Cert', date: 'Verified on Jan 2024' },
-            { name: 'Tax Residency Proof', date: 'Updated 2 days ago' },
-          ].map((cert, i) => (
-            <div key={i} className="bg-brand-secondary/20 border border-brand-muted p-6 flex items-center gap-4 group hover:bg-white transition-colors cursor-pointer">
-              <FileText className="w-8 h-8 text-brand-primary/20 group-hover:text-brand-primary/40 transition-colors" />
-              <div>
-                <p className="text-xs font-black text-brand-primary uppercase tracking-tight">{cert.name}</p>
-                <p className="text-[9px] font-bold text-brand-primary/40 uppercase">{cert.date}</p>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </div>
