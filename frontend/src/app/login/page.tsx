@@ -17,7 +17,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [roleMode, setRoleMode] = useState<'citizen' | 'municipal'>('citizen');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -144,36 +143,10 @@ export default function LoginPage() {
           
           <div className="space-y-2">
             <h2 className="text-3xl font-black text-[#2D3128]">Access Portal</h2>
-            <p className="text-[#7A7D74] font-medium">Please select your administrative role to continue.</p>
+            <p className="text-[#7A7D74] font-medium">Please enter your credentials to access the infrastructure dashboard.</p>
           </div>
 
-          {/* Role Toggle */}
-          <div className="bg-[#F0EEE9] p-1 rounded-none flex relative h-14">
-            <motion.div 
-              className="absolute h-[calc(100%-8px)] bg-white rounded-none shadow-sm top-1 left-1"
-              animate={{ x: roleMode === 'citizen' ? 0 : '100%' }}
-              initial={false}
-              style={{ width: 'calc(50% - 4px)' }}
-            />
-            <button 
-              onClick={() => setRoleMode('citizen')}
-              className={cn(
-                "flex-1 relative z-10 font-bold text-xs uppercase tracking-widest transition-colors",
-                roleMode === 'citizen' ? "text-[#2D3128]" : "text-[#7A7D74]"
-              )}
-            >
-              Citizen / Business
-            </button>
-            <button 
-              onClick={() => setRoleMode('municipal')}
-              className={cn(
-                "flex-1 relative z-10 font-bold text-xs uppercase tracking-widest transition-colors",
-                roleMode === 'municipal' ? "text-[#2D3128]" : "text-[#7A7D74]"
-              )}
-            >
-              Municipal Authority
-            </button>
-          </div>
+
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
