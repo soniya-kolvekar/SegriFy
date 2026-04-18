@@ -15,12 +15,8 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuthStore } from '@/context/useAuthStore';
-<<<<<<< HEAD
-import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
-=======
->>>>>>> 35bc7f457a89dd464b8a3615b86bd80fa38a658a
 
 const sidebarItems = [
   { name: 'Overview', href: '/dashboard', icon: LayoutGrid },

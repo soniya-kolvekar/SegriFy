@@ -45,7 +45,7 @@ export default function LoginPage() {
         return;
       }
 
-      const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5005';
+      const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const response = await fetch(`${API}/api/auth/me`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${firebaseToken}` }

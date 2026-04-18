@@ -45,7 +45,7 @@ export default function SignupPage() {
       console.log('Firebase user created successfully');
       const firebaseToken = await userCredential.user.getIdToken();
 
-      const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5005';
+      const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       console.log('Syncing with backend:', API);
       const response = await fetch(`${API}/api/auth/sync`, {
         method: 'POST',
