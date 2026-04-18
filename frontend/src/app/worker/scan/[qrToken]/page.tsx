@@ -24,6 +24,7 @@ export default function DirectScanPage() {
   const { user, firebaseToken } = useAuthStore();
   
   const [targetUser, setTargetUser] = useState<any>(null);
+  const [alreadyScanned, setAlreadyScanned] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,18 +33,17 @@ export default function DirectScanPage() {
   // 1. Auth & Role Protection
   useEffect(() => {
     if (!user) {
-      // Redirect to login but keep the current path as a redirect target
       router.push(`/login?redirect=/worker/scan/${qrToken}`);
       return;
     }
 
     if (user.role !== 'worker' && user.role !== 'municipal') {
-      setError('ACCESS DENIED: Only authorized Municipal workers can log waste segregation.');
+      setError('ACCESS DENIED: Authorized personnel only.');
       setLoading(false);
       return;
     }
 
-    // 2. Fetch Resident Details
+    // 2. Fetch Resident Details (Standardized check)
     const fetchResident = async () => {
       try {
         const res = await fetch(`${API}/api/segregation/validate/${qrToken}`, {
@@ -53,11 +53,12 @@ export default function DirectScanPage() {
         
         if (res.ok) {
           setTargetUser(data.user);
+          setAlreadyScanned(data.alreadyScanned);
         } else {
-          setError(data.message || 'Invalid QR Code or User not found.');
+          setError(data.message || 'Invalid Identifier.');
         }
       } catch (err) {
-        setError('Network error. Could not connect to the municipal server.');
+        setError('Connection failed. Please check your internet.');
       } finally {
         setLoading(false);
       }
@@ -67,9 +68,11 @@ export default function DirectScanPage() {
   }, [qrToken, user, firebaseToken, router]);
 
   const handleUpdate = async (status: 'proper' | 'improper') => {
-    if (!user || submitting) return;
+    if (!user || submitting || alreadyScanned) return;
     setSubmitting(true);
     setError(null);
+
+    const workerMongoId = user.id || user._id;
 
     try {
       const res = await fetch(`${API}/api/segregation/update`, {
@@ -81,21 +84,20 @@ export default function DirectScanPage() {
         body: JSON.stringify({
           qrToken,
           status,
-          workerId: user.id || user._id,
-          municipalId: 'MUNICIPAL_AUTH' // Fallback for direct scan
+          workerId: workerMongoId,
+          municipalId: workerMongoId // Use real ID to avoid cast error
         })
       });
 
       const data = await res.json();
       if (res.ok) {
         setSuccess(true);
-        // Auto-redirect back to dashboard after 3 seconds
-        setTimeout(() => router.push('/worker'), 3000);
+        setTimeout(() => router.push('/worker'), 2500);
       } else {
-        setError(data.message || 'Failed to update record.');
+        setError(data.message || 'Failed to update database.');
       }
     } catch (err) {
-      setError('Failed to transmit data to the server.');
+      setError('Failed to transmit data.');
     } finally {
       setSubmitting(false);
     }
@@ -175,13 +177,20 @@ export default function DirectScanPage() {
                 </div>
 
                 {/* Resident Card */}
-                <div className="bg-[#F9F6F1] p-6 space-y-4 border border-[#E5E2D9]">
+                <div className="bg-[#F9F6F1] p-6 space-y-4 border border-[#E5E2D9] relative">
+                  {alreadyScanned && (
+                    <div className="absolute top-4 right-4 bg-amber-500/10 border border-amber-500/30 px-2 py-1 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3 text-amber-600" />
+                      <span className="text-[8px] font-black text-amber-700 uppercase">Logged Today</span>
+                    </div>
+                  )}
+                  
                   <div className="flex items-start gap-4">
                     <div className="bg-[#4D5443] p-2.5">
                       <User className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-[#7A7D74] uppercase tracking-widest mb-1">Resident / Business</p>
+                      <p className="text-[10px] font-black text-[#7A7D74] uppercase tracking-widest mb-1">Resident / Entity</p>
                       <p className="text-lg font-black text-[#2D3128]">{targetUser?.name || 'Loading...'}</p>
                     </div>
                   </div>
@@ -190,26 +199,35 @@ export default function DirectScanPage() {
                       <MapPin className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-[#7A7D74] uppercase tracking-widest mb-1">Infrastructure ID</p>
-                      <p className="text-lg font-black text-[#2D3128]">{targetUser?.houseId || targetUser?.shopId || '—'}</p>
+                      <p className="text-[10px] font-black text-[#7A7D74] uppercase tracking-widest mb-1">Property ID (House No.)</p>
+                      <p className="text-xl font-black text-[#2D3128] tracking-tight">{targetUser?.houseId || targetUser?.shopId || '—'}</p>
                     </div>
                   </div>
                 </div>
 
+                {alreadyScanned && (
+                  <div className="bg-amber-50 p-4 border border-amber-200 flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+                    <p className="text-[10px] font-bold text-amber-800 uppercase leading-relaxed">
+                      Collection has already been verified for this property today. 
+                    </p>
+                  </div>
+                )}
+
                 {/* Actions */}
                 <div className="space-y-3">
                   <button 
-                    disabled={submitting}
+                    disabled={submitting || alreadyScanned}
                     onClick={() => handleUpdate('proper')}
-                    className="w-full bg-[#4D5443] text-white py-5 px-6 font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all flex items-center justify-between group"
+                    className="w-full bg-[#4D5443] text-white py-5 px-6 font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all flex items-center justify-between group disabled:opacity-30 disabled:grayscale"
                   >
                     <span>Proper Segregation</span>
                     <CheckCircle2 className="w-5 h-5 group-hover:scale-125 transition-transform" />
                   </button>
                   <button 
-                    disabled={submitting}
+                    disabled={submitting || alreadyScanned}
                     onClick={() => handleUpdate('improper')}
-                    className="w-full bg-white border-2 border-red-200 text-red-600 py-5 px-6 font-black text-xs uppercase tracking-[0.2em] hover:bg-red-50 active:scale-95 transition-all flex items-center justify-between group"
+                    className="w-full bg-white border-2 border-red-200 text-red-600 py-5 px-6 font-black text-xs uppercase tracking-[0.2em] hover:bg-red-50 active:scale-95 transition-all flex items-center justify-between group disabled:opacity-30 disabled:grayscale"
                   >
                     <span>Improperly Mixed</span>
                     <XCircle className="w-5 h-5 group-hover:scale-125 transition-transform" />
