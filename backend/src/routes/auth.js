@@ -14,18 +14,39 @@ router.post('/sync', verifyFirebaseToken, async (req, res) => {
       return res.status(403).json({ message: 'Forbidden: Cannot register as a municipal or worker account' });
     }
 
-    if (!['citizen', 'business'].includes(role)) {
+    if (!['citizen', 'business', 'citizen-independent', 'citizen-apartment'].includes(role)) {
        return res.status(400).json({ message: 'Invalid role specified' });
     }
 
-    // Check if user already exists
-    let user = await User.findOne({ firebaseUid });
+    // Check if user already exists (by UID or Email)
+    let user = await User.findOne({ 
+      $or: [{ firebaseUid }, { email }] 
+    });
+
     if (user) {
+      // If found by email but UID is different, update the UID (handles re-registrations)
+      if (user.firebaseUid !== firebaseUid) {
+        user.firebaseUid = firebaseUid;
+        await user.save();
+      }
       return res.status(200).json({ message: 'User already synced', user });
     }
 
-    // Create unique QR token for scanning
-    const qrToken = Math.random().toString(36).substring(2, 10).toUpperCase();
+    // Generate QR token based on houseId (primary key) so it is unique per house.
+    // Format: HOUSE-<normalized-houseId>-<firebaseUid-suffix>
+    // The QR code payload encodes a JSON string so workers can scan and get full context.
+    const normalizedHouseId = (houseId || shopId || 'NA')
+      .toUpperCase()
+      .replace(/\s+/g, '-');
+    const uidSuffix = firebaseUid.slice(-6).toUpperCase();
+    const qrToken = `${normalizedHouseId}-${uidSuffix}`;
+
+    // The value stored in the QR code (scanned by worker app)
+    const qrPayload = JSON.stringify({
+      houseId: houseId || shopId || 'NA',
+      token: qrToken,
+      uid: firebaseUid
+    });
 
     user = new User({
       firebaseUid,
@@ -35,10 +56,12 @@ router.post('/sync', verifyFirebaseToken, async (req, res) => {
       houseId,
       shopId,
       maskedAadhaar,
-      qrToken
+      qrToken,    // stored as lookup key
+      qrPayload   // stored as the full scannable string
     });
 
     await user.save();
+
 
     res.status(201).json({ message: 'User successfully synced to database', user });
   } catch (err) {

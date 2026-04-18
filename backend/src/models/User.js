@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   role: { 
     type: String, 
-    enum: ['citizen', 'worker', 'municipal', 'business'], 
+    enum: ['citizen', 'worker', 'municipal', 'business', 'citizen-independent', 'citizen-apartment'], 
     default: 'citizen' 
   },
   houseId: { type: String },
@@ -17,6 +17,8 @@ const userSchema = new mongoose.Schema({
   shopNumber: { type: String },
   maskedAadhaar: { type: String },
   qrToken: { type: String, unique: true },
+  qrPayload: { type: String },
+
   points: { type: Number, default: 0 },
   eligibilityStatus: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
