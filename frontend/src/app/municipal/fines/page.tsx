@@ -36,28 +36,28 @@ export default function FinesPage() {
 
   return (
     <div className="space-y-10 pb-20">
-      {/* Revenue Snapshot - NOW DYNAMIC */}
-      <div className="grid grid-cols-3 gap-8">
-        <div className="bg-white p-8 border border-[#E5E1D8] shadow-sm flex items-center justify-between transition-all">
+      {/* Revenue Snapshot - NOW DYNAMIC & RESPONSIVE */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="bg-white p-6 lg:p-8 border border-[#E5E1D8] shadow-sm flex items-center justify-between transition-all">
            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Total Fines Pending</p>
-              <h2 className="text-3xl font-black text-red-600 tracking-tighter">₹{analytics.pending.toLocaleString('en-IN')}</h2>
+              <p className="text-[9px] lg:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Total Fines Pending</p>
+              <h2 className="text-xl lg:text-3xl font-black text-red-600 tracking-tighter">₹{analytics.pending.toLocaleString('en-IN')}</h2>
            </div>
-           <AlertCircle className="w-10 h-10 text-red-600 opacity-20" />
+           <AlertCircle className="w-8 h-8 lg:w-10 lg:h-10 text-red-600 opacity-20" />
         </div>
-        <div className="bg-white p-8 border border-[#E5E1D8] shadow-sm flex items-center justify-between transition-all">
+        <div className="bg-white p-6 lg:p-8 border border-[#E5E1D8] shadow-sm flex items-center justify-between transition-all">
            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Collected MTD</p>
-              <h2 className="text-3xl font-black text-green-600 tracking-tighter">₹{analytics.collected.toLocaleString('en-IN')}</h2>
+              <p className="text-[9px] lg:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Collected MTD</p>
+              <h2 className="text-xl lg:text-3xl font-black text-green-600 tracking-tighter">₹{analytics.collected.toLocaleString('en-IN')}</h2>
            </div>
-           <CheckCircle2 className="w-10 h-10 text-green-600 opacity-20" />
+           <CheckCircle2 className="w-8 h-8 lg:w-10 lg:h-10 text-green-600 opacity-20" />
         </div>
-        <div className="bg-white p-8 border border-[#E5E1D8] shadow-sm flex items-center justify-between transition-all">
+        <div className="bg-white p-6 lg:p-8 border border-[#E5E1D8] shadow-sm flex items-center justify-between transition-all">
            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Collection Rate</p>
-              <h2 className="text-3xl font-black text-brand-primary tracking-tighter">{analytics.complianceRate}%</h2>
+              <p className="text-[9px] lg:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Collection Rate</p>
+              <h2 className="text-xl lg:text-3xl font-black text-brand-primary tracking-tighter">{analytics.complianceRate}%</h2>
            </div>
-           <Gavel className="w-10 h-10 text-brand-primary opacity-20" />
+           <Gavel className="w-8 h-8 lg:w-10 lg:h-10 text-brand-primary opacity-20" />
         </div>
       </div>
 
