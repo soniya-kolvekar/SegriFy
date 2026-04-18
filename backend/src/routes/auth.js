@@ -59,4 +59,34 @@ router.get('/me', verifyFirebaseToken, async (req, res) => {
   }
 });
 
+// Update User Profile (Used for Business Onboarding)
+router.patch('/update-profile', verifyFirebaseToken, async (req, res) => {
+  try {
+    const { businessName, aadhaarNo, panCard, shopNumber } = req.body;
+    const firebaseUid = req.user.firebaseUid;
+
+    const user = await User.findOneAndUpdate(
+      { firebaseUid },
+      { 
+        businessName, 
+        aadhaarNo, 
+        panCard, 
+        shopNumber,
+        // Also update name if provided, or use businessName as name
+        name: businessName || req.user.mongoUser.name 
+      },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'Profile updated successfully', user });
+  } catch (err) {
+    console.error('Update Profile Error:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

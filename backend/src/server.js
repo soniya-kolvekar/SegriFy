@@ -39,10 +39,12 @@ app.use((req, res, next) => {
 const authRoutes = require('./routes/auth');
 const segregationRoutes = require('./routes/segregation');
 const dashboardRoutes = require('./routes/dashboard');
+const businessRoutes = require('./routes/business');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/segregation', segregationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/business', businessRoutes);
 
 // Routes Placeholder
 app.get('/', (req, res) => {
