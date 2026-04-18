@@ -14,6 +14,7 @@ import {
 import { useAuthStore } from '@/context/useAuthStore';
 import Link from 'next/link';
 import RazorpayPayment from '@/components/RazorpayPayment';
+import { apiRequest } from '@/lib/api';
 
 interface Request {
   _id: string;
@@ -33,9 +34,7 @@ export default function BusinessDashboard() {
 
   const fetchRequests = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/business/requests', {
-        headers: { 'Authorization': `Bearer ${firebaseToken}` }
-      });
+      const res = await apiRequest('/api/business/requests');
       const data = await res.json();
       setRequests(data);
     } catch (err) {
@@ -52,12 +51,8 @@ export default function BusinessDashboard() {
 
   const handlePaymentSuccess = async (requestId: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/business/requests/${requestId}/pay`, {
-        method: 'PATCH',
-        headers: { 
-          'Authorization': `Bearer ${firebaseToken}`,
-          'Content-Type': 'application/json'
-        }
+      const res = await apiRequest(`/api/business/requests/${requestId}/pay`, {
+        method: 'PATCH'
       });
       if (res.ok) {
         await fetchRequests();
