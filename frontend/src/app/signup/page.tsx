@@ -28,14 +28,25 @@ export default function SignupPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
+    console.log('Signup Attempt:', email);
+
+    if (!auth) {
+      console.error('Firebase Auth not initialized');
+      setError('Authentication system error. Please refresh.');
+      setLoading(false);
+      return;
+    }
 
     const finalRole = parentRole === 'business' ? 'business' : `citizen-${citizenType}`;
 
     try {
+      console.log('Creating Firebase user...');
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('Firebase user created successfully');
       const firebaseToken = await userCredential.user.getIdToken();
 
       const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5005';
+      console.log('Syncing with backend:', API);
       const response = await fetch(`${API}/api/auth/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${firebaseToken}` },
@@ -51,7 +62,22 @@ export default function SignupPage() {
         await userCredential.user.delete().catch(console.error);
       }
     } catch (err: any) {
-      setError(err.message || 'Registration failed.');
+      console.error('Signup Error Caught:', err);
+      setLoading(false);
+      
+      const errorMessage = err.message || '';
+      const errorCode = err.code || '';
+
+      if (errorCode === 'auth/email-already-in-use' || errorMessage.includes('auth/email-already-in-use')) {
+        setError('This email is already registered. Please sign in instead.');
+      } else if (errorCode === 'auth/weak-password' || errorMessage.includes('auth/weak-password')) {
+        setError('Password should be at least 6 characters.');
+      } else if (errorCode === 'auth/invalid-email' || errorMessage.includes('auth/invalid-email')) {
+        setError('Please enter a valid email address.');
+      } else {
+        setError(errorMessage || 'Registration failed.');
+      }
+      return; // Stop execution
     } finally {
       setLoading(false);
     }
@@ -159,14 +185,25 @@ export default function SignupPage() {
             </AnimatePresence>
 
             {error && (
-              <div className="bg-red-50 text-red-600 p-4 rounded-none text-xs font-bold border border-red-100">{error}</div>
+              <div className="bg-red-50 text-red-600 p-4 rounded-none text-xs font-bold border border-red-100 flex flex-col gap-2">
+                <span>{error}</span>
+                {error.includes('already registered') && (
+                  <button 
+                    type="button" 
+                    onClick={() => router.push('/login')}
+                    className="text-left text-[#4D5443] underline decoration-dotted"
+                  >
+                    Go to Login instead →
+                  </button>
+                )}
+              </div>
             )}
 
             <div className="space-y-1.5">
               <label className="text-[10px] font-black text-[#7A7D74] uppercase tracking-widest ml-1">Email Address</label>
               <div className="relative group">
                 <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A7D74] group-focus-within:text-[#4D5443]" />
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@example.com"
+                <input type="email" value={email} onChange={e => { setEmail(e.target.value); if (error) setError(''); }} placeholder="name@example.com"
                   className="w-full bg-white py-4 pl-14 pr-6 rounded-none border border-[#E5E2D9] text-sm font-medium focus:ring-4 focus:ring-[#4D5443]/5 focus:border-[#4D5443] transition-all outline-none" required />
               </div>
             </div>
