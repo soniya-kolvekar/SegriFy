@@ -48,10 +48,17 @@ export default function BusinessDashboard() {
     fetchRequests();
   }, [firebaseToken]);
 
+  // Dynamic calculations
+  const totalQuantity = requests.reduce((sum, req) => sum + Number(req.quantity || 0), 0);
+  
+  const acceptedRequests = requests.filter(req => req.status === 'Accepted').length;
+  // If no requests exist yet, it's 100% compliant. Otherwise (Accepted / Total) * 100
+  const complianceScore = requests.length === 0 ? 100 : Math.round((acceptedRequests / requests.length) * 100);
+
   const stats = [
     { label: 'Total Requests', value: requests.length, icon: FileText, color: 'text-brand-primary', bg: 'bg-brand-secondary' },
-    { label: 'Sustainability Impact', value: '14.2 Tons', icon: BarChart3, color: 'text-brand-primary', bg: 'bg-brand-secondary' },
-    { label: 'Compliance Score', value: '98%', icon: CheckCircle2, color: 'text-brand-primary', bg: 'bg-brand-secondary' },
+    { label: 'Sustainability Impact', value: `${totalQuantity.toFixed(1)} kg`, icon: BarChart3, color: 'text-brand-primary', bg: 'bg-brand-secondary' },
+    { label: 'Compliance Score', value: `${complianceScore}%`, icon: CheckCircle2, color: 'text-brand-primary', bg: 'bg-brand-secondary' },
   ];
 
   const getStatusColor = (status: string) => {
@@ -107,7 +114,7 @@ export default function BusinessDashboard() {
                       {mounted ? new Date(req.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '...'}
                     </td>
                     <td className="px-6 py-6 font-bold text-brand-primary text-sm">{req.itemType}</td>
-                    <td className="px-6 py-6 font-black text-brand-primary text-sm">{req.quantity} Tons</td>
+                    <td className="px-6 py-6 font-black text-brand-primary text-sm">{req.quantity} kg</td>
                     <td className="px-6 py-6">
                       <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest border border-current ${getStatusColor(req.status)}`}>
                         {req.status}
@@ -162,7 +169,7 @@ export default function BusinessDashboard() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-[9px] font-black text-brand-primary/40 uppercase tracking-widest">Quantity</p>
-                  <p className="font-bold text-brand-primary">{selectedRequest.quantity} Tons</p>
+                  <p className="font-bold text-brand-primary">{selectedRequest.quantity} kg</p>
                 </div>
               </div>
               <div className="space-y-1">

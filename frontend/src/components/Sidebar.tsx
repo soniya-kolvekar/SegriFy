@@ -19,6 +19,8 @@ import {
 import { cn } from '../lib/utils';
 import { useAuthStore } from '@/context/useAuthStore';
 import { useRouter } from 'next/navigation';
+import { auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 
 const sidebarItems = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -49,9 +51,14 @@ export default function Sidebar() {
   if (isMunicipal) items = municipalItems;
   if (isBusiness) items = businessItems;
 
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      logout();
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (

@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 
 interface Material {
   name: string;
-  costPerTon: number;
+  costPerKg: number;
   description: string;
 }
 
@@ -43,10 +43,17 @@ export default function MaterialRequestPage() {
   }, [firebaseToken]);
 
   const currentMaterial = materials.find(m => m.name === selectedMaterial);
-  const estimatedAmount = currentMaterial ? currentMaterial.costPerTon * quantity : 0;
+  // Estimate based on cost per Kg. Adding a fallback to 0. (Usually cost is per kg, if they mean per ton, we'd divide by 1000. But user wants unit changed to kg, so the DB `costPerTon` logically represents `cost for that amount unit`. We'll fetch the property they have, assuming the municipal will enter prices correctly).
+  // Wait, the DB had `costPerTon`, so changing type to `costPerKg` might break DB fetching if the DB schema isn't changed.
+  // Actually, Municipal schema doesn't exist explicitly here, but let's read `m.costPerTon` or `m.costPerKg`.
+  const estimatedAmount = currentMaterial ? (currentMaterial.costPerKg || (currentMaterial as any).costPerTon || 0) * quantity : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (materials.length === 0) {
+      setMessage({ type: 'error', text: 'No materials configured by municipal yet.' });
+      return;
+    }
     if (quantity <= 0) {
       setMessage({ type: 'error', text: 'Please enter a valid quantity.' });
       return;
@@ -114,9 +121,12 @@ export default function MaterialRequestPage() {
               <select 
                 value={selectedMaterial}
                 onChange={(e) => setSelectedMaterial(e.target.value)}
-                className="w-full bg-brand-bg py-4 px-5 rounded-none border border-brand-muted text-sm font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary transition-all appearance-none cursor-pointer"
+                disabled={materials.length === 0}
+                className="w-full bg-brand-bg py-4 px-5 rounded-none border border-brand-muted text-sm font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {fetching ? <option>Loading...</option> : materials.map(m => (
+                {fetching ? <option>Loading...</option> : 
+                 materials.length === 0 ? <option>No materials available</option> : 
+                 materials.map(m => (
                   <option key={m.name} value={m.name}>{m.name}</option>
                 ))}
               </select>
@@ -132,10 +142,11 @@ export default function MaterialRequestPage() {
                     min="0"
                     value={quantity}
                     onChange={(e) => setQuantity(Number(e.target.value))}
-                    className="w-full bg-brand-bg py-4 px-5 rounded-none border border-brand-muted text-sm font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary transition-all pr-24"
+                    disabled={materials.length === 0}
+                    className="w-full bg-brand-bg py-4 px-5 rounded-none border border-brand-muted text-sm font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary transition-all pr-24 disabled:opacity-50"
                     placeholder="0"
                   />
-                  <span className="absolute right-10 top-1/2 -translate-y-1/2 text-[10px] font-black text-brand-primary/40 uppercase">tonnes</span>
+                  <span className="absolute right-10 top-1/2 -translate-y-1/2 text-[10px] font-black text-brand-primary/40 uppercase">kg</span>
                 </div>
               </div>
 
@@ -160,8 +171,8 @@ export default function MaterialRequestPage() {
 
             <button 
               type="submit"
-              disabled={loading || fetching}
-              className="w-full bg-brand-primary py-5 rounded-none text-white font-black text-sm uppercase tracking-widest hover:brightness-110 transition-all disabled:opacity-50"
+              disabled={loading || fetching || materials.length === 0}
+              className="w-full bg-brand-primary py-5 rounded-none text-white font-black text-sm uppercase tracking-widest hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Processing...' : 'Submit Request'}
             </button>

@@ -20,7 +20,10 @@ export default function BusinessProfilePage() {
     businessName: user?.businessName || '',
     aadhaarNo: user?.aadhaarNo || '',
     panCard: user?.panCard || '',
-    shopNumber: user?.shopNumber || ''
+    industrySector: user?.industrySector || '',
+    name: user?.name || '',
+    phone: user?.phone || '',
+    pickupAddress: user?.pickupAddress || ''
   });
   const [message, setMessage] = useState('');
 
@@ -30,7 +33,10 @@ export default function BusinessProfilePage() {
         businessName: user.businessName || '',
         aadhaarNo: user.aadhaarNo || '',
         panCard: user.panCard || '',
-        shopNumber: user.shopNumber || ''
+        industrySector: user.industrySector || '',
+        name: user.name || '',
+        phone: user.phone || '',
+        pickupAddress: user.pickupAddress || ''
       });
     }
   }, [user]);
@@ -66,6 +72,8 @@ export default function BusinessProfilePage() {
       setLoading(false);
     }
   };
+
+  const hasTaxId = Boolean(user?.panCard || user?.aadhaarNo);
 
   return (
     <div className="p-10 max-w-7xl mx-auto space-y-10">
@@ -107,7 +115,7 @@ export default function BusinessProfilePage() {
             </button>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-12 gap-x-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-y-12 gap-x-12">
             <div className="space-y-2">
               <p className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest">Legal Business Name</p>
               {isEditing ? (
@@ -123,35 +131,13 @@ export default function BusinessProfilePage() {
             </div>
 
             <div className="space-y-2">
-              <p className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest">Registration ID</p>
-              {isEditing ? (
-                <input 
-                  type="text"
-                  value={formData.shopNumber}
-                  onChange={(e) => setFormData({...formData, shopNumber: e.target.value})}
-                  className="w-full bg-white py-3 px-4 border border-brand-muted text-sm font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary"
-                />
-              ) : (
-                <p className="text-xl font-black text-brand-primary uppercase tracking-tight">{user?.shopNumber || 'REG-7700-SFY-2024'}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest">Tax ID (Aadhaar/PAN)</p>
-              {isEditing ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <input 
-                    type="text"
-                    maxLength={12}
-                    placeholder="Aadhaar"
-                    value={formData.aadhaarNo}
-                    onChange={(e) => setFormData({...formData, aadhaarNo: e.target.value})}
-                    className="w-full bg-white py-3 px-4 border border-brand-muted text-sm font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary"
-                  />
+              <p className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest flex items-center gap-1">Tax ID (Aadhaar/PAN) {hasTaxId && <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block"></span>}</p>
+              {isEditing && !hasTaxId ? (
+                <div className="grid grid-cols-1 gap-2">
                   <input 
                     type="text"
                     maxLength={10}
-                    placeholder="PAN"
+                    placeholder="PAN (Primary)"
                     value={formData.panCard}
                     onChange={(e) => setFormData({...formData, panCard: e.target.value.toUpperCase()})}
                     className="w-full bg-white py-3 px-4 border border-brand-muted text-sm font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary"
@@ -159,38 +145,69 @@ export default function BusinessProfilePage() {
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <p className="text-xl font-black text-brand-primary uppercase tracking-tight">{user?.panCard || '22AAAAA0000A1Z5'}</p>
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <p className="text-xl font-black text-brand-primary uppercase tracking-tight">{user?.panCard || user?.aadhaarNo || 'Not Provided'}</p>
                 </div>
               )}
             </div>
 
             <div className="space-y-2">
               <p className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest">Industry Sector</p>
-              <p className="text-xl font-black text-brand-primary uppercase tracking-tight">Industrial Waste Management</p>
+              {isEditing ? (
+                <input 
+                  type="text"
+                  value={formData.industrySector}
+                  onChange={(e) => setFormData({...formData, industrySector: e.target.value})}
+                  className="w-full bg-white py-3 px-4 border border-brand-muted text-sm font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary"
+                />
+              ) : (
+                <p className="text-xl font-black text-brand-primary uppercase tracking-tight">{user?.industrySector || 'Not Set'}</p>
+              )}
             </div>
           </div>
         </div>
 
         {/* Administrative Contact */}
-        <div className="lg:col-span-4 bg-white border border-brand-muted p-10 space-y-10 rounded-none shadow-none">
-          <h2 className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest">Administrative Contact</h2>
+        <div className="lg:col-span-4 bg-white border border-brand-muted p-10 space-y-10 rounded-none shadow-none relative">
+          <h2 className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest flex justify-between">
+            Administrative Contact
+          </h2>
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-brand-primary flex items-center justify-center text-white font-black text-2xl rounded-none overflow-hidden">
+            <div className="w-16 h-16 bg-brand-primary flex items-center justify-center text-white font-black text-2xl rounded-none overflow-hidden shrink-0">
                <img src={`https://ui-avatars.com/api/?name=${user?.name}&background=5C5D47&color=fff&bold=true`} alt="Avatar" className="w-full h-full object-cover" />
             </div>
-            <div>
-              <p className="font-black text-brand-primary uppercase text-sm tracking-tight">{user?.name || 'Marcus Thorne'}</p>
-              <p className="text-[10px] text-brand-primary/60 font-bold uppercase tracking-widest">Primary Account Manager</p>
-            </div>
+            {isEditing ? (
+              <input 
+                type="text"
+                placeholder="Full Name"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                className="w-full bg-white py-2 px-3 border border-brand-muted text-sm font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary"
+              />
+            ) : (
+              <div>
+                <p className="font-black text-brand-primary uppercase text-sm tracking-tight">{user?.name || 'Not Set'}</p>
+                <p className="text-[10px] text-brand-primary/60 font-bold uppercase tracking-widest break-words">Primary Manager</p>
+              </div>
+            )}
           </div>
           <div className="space-y-4 pt-4">
-            <div className="flex items-center gap-3 text-[10px] text-brand-primary font-bold uppercase tracking-widest">
-              <Mail className="w-3 h-3 text-brand-primary/40" /> {user?.email}
+            <div className="flex items-center gap-3 text-[10px] text-brand-primary font-bold uppercase tracking-widest truncate">
+              <Mail className="w-3 h-3 shrink-0 text-brand-primary/40" /> 
+              {user?.email} 
             </div>
             <div className="flex items-center gap-3 text-[10px] text-brand-primary font-bold uppercase tracking-widest">
-               <svg className="w-3 h-3 text-brand-primary/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-               +1 (555) 012-8892
+               <svg className="w-3 h-3 shrink-0 text-brand-primary/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+               {isEditing ? (
+                 <input 
+                   type="tel"
+                   placeholder="Phone Number"
+                   value={formData.phone}
+                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                   className="w-full bg-white py-1 px-2 border border-brand-muted text-xs font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary"
+                 />
+               ) : (
+                 <span>{user?.phone || 'Not Set'}</span>
+               )}
             </div>
           </div>
         </div>
@@ -206,10 +223,21 @@ export default function BusinessProfilePage() {
         
         <div className="flex flex-col md:flex-row gap-10 relative z-10">
           <div className="flex-1 space-y-6">
-            <div className="space-y-1">
-              <p className="text-2xl font-black text-brand-primary uppercase tracking-tight leading-tight">Sector 12 Industrial Estate, <br/> Block C, Warehouse 42A</p>
-              <p className="text-brand-primary/60 font-bold text-sm uppercase tracking-tight">New Delhi, NCR - 110044, India</p>
-            </div>
+            {isEditing ? (
+              <textarea 
+                rows={3}
+                placeholder="Enter full pickup address..."
+                value={formData.pickupAddress}
+                onChange={(e) => setFormData({...formData, pickupAddress: e.target.value})}
+                className="w-full bg-white py-4 px-5 border border-brand-muted text-lg font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary resize-none"
+              />
+            ) : (
+              <div className="space-y-1">
+                <p className="text-2xl font-black text-brand-primary uppercase tracking-tight leading-loose whitespace-pre-line">
+                  {user?.pickupAddress || 'No pickup address set.'}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

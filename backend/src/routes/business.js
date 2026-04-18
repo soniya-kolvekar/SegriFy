@@ -8,20 +8,19 @@ const { verifyFirebaseToken, checkRole } = require('../middleware/auth');
 router.get('/materials', verifyFirebaseToken, async (req, res) => {
   try {
     const materials = await Material.find();
-    
-    // If no materials exist, return dummy data
+    // If no materials exist, return dummy data as requested by user until municipal interface is complete.
     if (materials.length === 0) {
       const dummyMaterials = [
-        { name: 'Paper', costPerTon: 150, description: 'High quality recyclable paper' },
-        { name: 'Plastic', costPerTon: 200, description: 'Industrial grade plastic waste' },
-        { name: 'E-Waste', costPerTon: 500, description: 'Electronic components and scrap' },
-        { name: 'Metal', costPerTon: 400, description: 'Aluminum and steel scrap' },
-        { name: 'Organic', costPerTon: 100, description: 'Compostable organic waste' }
+        { name: 'Paper', costPerKg: 15, description: 'High quality recyclable paper' },
+        { name: 'Plastic', costPerKg: 20, description: 'Industrial grade plastic waste' },
+        { name: 'E-Waste', costPerKg: 50, description: 'Electronic components and scrap' },
+        { name: 'Metal', costPerKg: 40, description: 'Aluminum and steel scrap' },
+        { name: 'Organic', costPerKg: 10, description: 'Compostable organic waste' }
       ];
       return res.json(dummyMaterials);
     }
     
-    res.json(materials);
+    return res.json(materials);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

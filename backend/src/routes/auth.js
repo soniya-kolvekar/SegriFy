@@ -62,20 +62,35 @@ router.get('/me', verifyFirebaseToken, async (req, res) => {
 // Update User Profile (Used for Business Onboarding)
 router.patch('/update-profile', verifyFirebaseToken, async (req, res) => {
   try {
-    const { businessName, aadhaarNo, panCard, shopNumber } = req.body;
+    const { businessName, aadhaarNo, panCard, industrySector, phone, pickupAddress, name } = req.body;
     const firebaseUid = req.user.firebaseUid;
+    const mongoUser = req.user.mongoUser;
+
+    if (!mongoUser) {
+      return res.status(404).json({ message: 'User not found in context' });
+    }
+
+    // Prepare update payload
+    let updatePayload = {
+        businessName,
+        industrySector,
+        phone,
+        pickupAddress,
+        name: name || businessName || mongoUser.name
+    };
+
+    // Immutability Check: Only allow tax IDs to be set if they don't already exist.
+    if (!mongoUser.aadhaarNo && aadhaarNo) {
+        updatePayload.aadhaarNo = aadhaarNo;
+    }
+    if (!mongoUser.panCard && panCard) {
+        updatePayload.panCard = panCard;
+    }
 
     const user = await User.findOneAndUpdate(
       { firebaseUid },
-      { 
-        businessName, 
-        aadhaarNo, 
-        panCard, 
-        shopNumber,
-        // Also update name if provided, or use businessName as name
-        name: businessName || req.user.mongoUser.name 
-      },
-      { new: true }
+      updatePayload,
+      { returnDocument: 'after' }
     );
 
     if (!user) {

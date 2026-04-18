@@ -11,9 +11,11 @@ interface User {
   points?: number;
   eligibilityStatus?: boolean;
   businessName?: string;
+  industrySector?: string;
+  phone?: string;
+  pickupAddress?: string;
   aadhaarNo?: string;
   panCard?: string;
-  shopNumber?: string;
 }
 
 interface AuthState {
