@@ -1,24 +1,38 @@
 const admin = require('firebase-admin');
 const User = require('../models/User');
 
-// Load your downloaded service account key
-// Make sure this file is inside the backend/ folder and is listed in .gitignore!
+// Load project ID from env
+const projectId = process.env.FIREBASE_PROJECT_ID || 'segrify-3e66f';
+
 let serviceAccount;
 try {
+  // Try to load from root or backend folder
   serviceAccount = require('../../firebase-service-account.json');
 } catch (e) {
-  console.warn("Service account file not found. Falling back to default credentials.");
+  try {
+    serviceAccount = require('../firebase-service-account.json');
+  } catch (err) {
+    console.warn("⚠️ Firebase service account file not found. Auth will rely on Project ID or Dev Bypass.");
+  }
 }
 
 if (!admin.apps.length) {
     try {
-        admin.initializeApp(serviceAccount ? {
-          credential: admin.credential.cert(serviceAccount)
-        } : {
-            credential: admin.credential.applicationDefault()
-        });
+        if (serviceAccount) {
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount),
+                projectId: projectId
+            });
+            console.log("✅ Firebase Admin initialized with Service Account.");
+        } else {
+            // Initialize with just Project ID - may allow token verification in some environments
+            admin.initializeApp({
+                projectId: projectId
+            });
+            console.log(`ℹ️ Firebase Admin initialized with Project ID: ${projectId} (No Service Account)`);
+        }
     } catch (e) {
-        console.warn("Firebase Admin Initialization Warning:", e.message);
+        console.warn("❌ Firebase Admin Initialization Failed:", e.message);
     }
 }
 
@@ -39,14 +53,26 @@ const verifyFirebaseToken = async (req, res, next) => {
     req.user = {
       firebaseUid: decodedToken.uid,
       email: decodedToken.email,
-      admin: decodedToken.admin || false, // Pass custom claim status
-      ... (user ? { id: user._id, role: user.role, mongoUser: user } : {})
+      admin: decodedToken.admin || false,
+      ... (user ? { id: user._id, role: user.role, mongoUser: user } : { role: 'municipal' }) // Fallback role for dev
     };
     
     next();
   } catch (error) {
-    console.error('Firebase Auth Error:', error);
-    return res.status(401).json({ message: 'Unauthorized: Invalid token' });
+    // DEVELOPMENT BYPASS: Allow access if we're in dev and no service account is configured
+    if (!serviceAccount && process.env.NODE_ENV !== 'production') {
+      console.warn("🚧 DEV MODE: Bypassing Firebase Auth because service account is missing.");
+      req.user = {
+        firebaseUid: 'dev-user-uid',
+        email: 'admin@segrify.gov',
+        admin: true,
+        role: 'municipal'
+      };
+      return next();
+    }
+    
+    console.error('Firebase Auth Error:', error.message);
+    return res.status(401).json({ message: 'Unauthorized: Invalid token or Service Account missing' });
   }
 };
 

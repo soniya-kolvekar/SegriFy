@@ -148,50 +148,50 @@ export default function HistoryPage() {
 
   return (
     <div className="space-y-10 pb-20">
-      {/* Financial Audit Overview */}
-      <div className="grid grid-cols-3 gap-8">
-        <div className="bg-white p-8 border border-[#E5E1D8] shadow-sm">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Total Material Revenue</p>
+      {/* Financial Audit Overview - NOW RESPONSIVE */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="bg-white p-6 lg:p-8 border border-[#E5E1D8] shadow-sm">
+          <p className="text-[9px] lg:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Total Material Revenue</p>
           <div className="flex items-center justify-between">
-             <h2 className="text-3xl font-black text-brand-primary tracking-tighter">₹51,700</h2>
-             <div className="w-10 h-10 bg-blue-50 text-blue-600 flex items-center justify-center">
-                <ArrowDownLeft className="w-5 h-5" />
+             <h2 className="text-xl lg:text-3xl font-black text-brand-primary tracking-tighter">₹51,700</h2>
+             <div className="w-8 h-8 lg:w-10 lg:h-10 bg-blue-50 text-blue-600 flex items-center justify-center">
+                <ArrowDownLeft className="w-4 h-4 lg:w-5 lg:h-5" />
              </div>
           </div>
-          <p className="text-[10px] font-bold text-gray-400 mt-4 uppercase">From Business Purchases</p>
+          <p className="text-[9px] lg:text-[10px] font-bold text-gray-400 mt-4 uppercase">From Business Purchases</p>
         </div>
         
-        <div className="bg-white p-8 border border-[#E5E1D8] shadow-sm">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Total Rewards Disbursed</p>
+        <div className="bg-white p-6 lg:p-8 border border-[#E5E1D8] shadow-sm">
+          <p className="text-[9px] lg:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Total Rewards Disbursed</p>
           <div className="flex items-center justify-between">
-             <h2 className="text-3xl font-black text-orange-600 tracking-tighter">₹1,300</h2>
-             <div className="w-10 h-10 bg-orange-50 text-orange-600 flex items-center justify-center">
-                <ArrowUpRight className="w-5 h-5" />
+             <h2 className="text-xl lg:text-3xl font-black text-orange-600 tracking-tighter">₹1,300</h2>
+             <div className="w-8 h-8 lg:w-10 lg:h-10 bg-orange-50 text-orange-600 flex items-center justify-center">
+                <ArrowUpRight className="w-4 h-4 lg:w-5 lg:h-5" />
              </div>
           </div>
-          <p className="text-[10px] font-bold text-gray-400 mt-4 uppercase">To Homeowner Citizens</p>
+          <p className="text-[9px] lg:text-[10px] font-bold text-gray-400 mt-4 uppercase">To Homeowner Citizens</p>
         </div>
 
-        <div className="bg-white p-8 border border-[#E5E1D8] shadow-sm flex flex-col justify-center">
+        <div className="bg-white p-6 lg:p-8 border border-[#E5E1D8] shadow-sm flex flex-col justify-center">
            <button 
             onClick={downloadAuditReport}
-            className="bg-brand-primary text-white py-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-[#3d5a4a] transition-all"
+            className="bg-brand-primary text-white py-4 text-[9px] lg:text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-[#3d5a4a] transition-all w-full"
            >
               <Download className="w-4 h-4" />
-              Generate Audit Report (CSV)
+              Generate Audit Report
            </button>
         </div>
       </div>
 
-      {/* Transaction Ledger */}
+      {/* Transaction Ledger - NOW RESPONSIVE */}
       <div className="bg-white border border-[#E5E1D8] shadow-sm overflow-hidden flex flex-col">
-        <div className="p-10 flex justify-between items-center border-b border-[#F0EDE7]">
+        <div className="p-6 lg:p-10 flex flex-col lg:flex-row justify-between items-start lg:items-center border-b border-[#F0EDE7] gap-6">
           <div>
-            <h3 className="text-2xl font-black text-brand-primary tracking-tight">Financial Audit History</h3>
-            <p className="text-sm font-medium text-gray-400 mt-1">Monitoring the flow of material revenue and citizen reward disbursements.</p>
+            <h3 className="text-xl lg:text-2xl font-black text-brand-primary tracking-tight uppercase">Audit History</h3>
+            <p className="text-xs font-medium text-gray-400 mt-1">Monitoring the flow of material revenue and rewards.</p>
           </div>
           
-          <div className="flex bg-[#F0EDE7]">
+          <div className="flex bg-[#F0EDE7] w-full lg:w-auto">
             <button 
               onClick={() => setActiveFilter('ALL')}
               className={`px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-all ${activeFilter === 'ALL' ? 'bg-brand-primary text-white' : 'text-gray-400 hover:text-brand-primary'}`}
