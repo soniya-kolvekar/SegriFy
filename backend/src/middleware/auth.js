@@ -17,24 +17,24 @@ try {
 }
 
 if (!admin.apps.length) {
-    try {
-        if (serviceAccount) {
-            admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount),
-                projectId: serviceAccount.project_id || projectId
-            });
-            console.log(`✅ Firebase Admin initialized for project: ${serviceAccount.project_id || projectId}`);
-        } else if (projectId) {
-            admin.initializeApp({
-                projectId: projectId
-            });
-            console.log(`ℹ️ Firebase Admin initialized with Project ID: ${projectId} (No Service Account)`);
-        } else {
-            console.warn("❌ Firebase Admin could not be initialized: Missing Project ID and Service Account.");
-        }
-    } catch (e) {
-        console.warn("❌ Firebase Admin Initialization Failed:", e.message);
+  try {
+    if (serviceAccount) {
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        projectId: serviceAccount.project_id || projectId
+      });
+      console.log(`✅ Firebase Admin initialized for project: ${serviceAccount.project_id || projectId}`);
+    } else if (projectId) {
+      admin.initializeApp({
+        projectId: projectId
+      });
+      console.log(`ℹ️ Firebase Admin initialized with Project ID: ${projectId} (No Service Account)`);
+    } else {
+      console.warn("❌ Firebase Admin could not be initialized: Missing Project ID and Service Account.");
     }
+  } catch (e) {
+    console.warn("❌ Firebase Admin Initialization Failed:", e.message);
+  }
 }
 
 
@@ -48,10 +48,10 @@ const verifyFirebaseToken = async (req, res, next) => {
 
   try {
     const decodedToken = await admin.auth().verifyIdToken(token);
-    
+
     // Find MongoDB user associated with this Firebase UID
     const user = await User.findOne({ firebaseUid: decodedToken.uid });
-    
+
     req.user = {
       firebaseUid: decodedToken.uid,
       email: decodedToken.email,
@@ -59,7 +59,7 @@ const verifyFirebaseToken = async (req, res, next) => {
       role: user ? user.role : (decodedToken.email === 'admin@segrify.gov' ? 'municipal' : 'citizen'),
       mongoUser: user
     };
-    
+
     next();
   } catch (error) {
     if (error.code === 'auth/id-token-expired') {
@@ -78,7 +78,7 @@ const verifyFirebaseToken = async (req, res, next) => {
       };
       return next();
     }
-    
+
     console.error('Firebase Auth Error:', error.message);
     return res.status(401).json({ message: 'Unauthorized: Invalid token' });
   }

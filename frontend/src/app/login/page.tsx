@@ -20,6 +20,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  let isAdmin = false;
   const router = useRouter();
   const { user, setAuth } = useAuthStore();
 
@@ -42,29 +43,10 @@ export default function LoginPage() {
       const tokenResult = await userCredential.user.getIdTokenResult(true);
       const firebaseToken = tokenResult.token;
       
-      // Admin override check — Use custom claim if necessary, but prefer DB identity
-      // Note: For 'admin@segrify.gov', we want to use the actual MongoDB profile details.
-      // Direct Municipal Access for core admin
+      // For core admin, we still check the database to get a real ObjectId,
+      // but we force the Municipal role regardless of what's in the DB.
       if (email === 'admin@segrify.gov') {
-        setAuth({
-            id: 'admin_override',
-            firebaseUid: userCredential.user.uid,
-            name: 'Municipal Administrator',
-            email: userCredential.user.email || '',
-            role: 'municipal'
-        }, firebaseToken);
-        router.push('/municipal');
-        return;
-      } else if (tokenResult.claims.admin || email === 'admin@segrify.gov') {
-        setAuth({
-            id: 'admin_override',
-            firebaseUid: userCredential.user.uid,
-            name: 'Municipal Administrator',
-            email: userCredential.user.email || '',
-            role: 'municipal'
-        }, firebaseToken);
-        router.push('/municipal');
-        return;
+        isAdmin = true;
       }
 
       const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -76,11 +58,13 @@ export default function LoginPage() {
       const data = await response.json();
       
       if (response.ok) {
-        setAuth(data.user, firebaseToken);
+        // Ensure admin@segrify.gov always has municipal role in the app
+        const finalUser = isAdmin ? { ...data.user, role: 'municipal' } : data.user;
+        setAuth(finalUser, firebaseToken);
         
         // Unified Onboarding/Dashboard Redirect
-        const role = data.user.role || 'citizen';
-        const hasIdentity = data.user.houseId || data.user.shopId;
+        const role = finalUser.role || 'citizen';
+        const hasIdentity = finalUser.houseId || finalUser.shopId || finalUser.role === 'municipal';
 
         if (role === 'municipal') {
           router.push('/municipal');
