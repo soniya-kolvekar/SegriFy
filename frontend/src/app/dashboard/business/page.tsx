@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/context/useAuthStore';
 import Link from 'next/link';
+import RazorpayPayment from '@/components/RazorpayPayment';
 
 interface Request {
   _id: string;
@@ -38,7 +39,15 @@ export default function BusinessDashboard() {
           headers: { 'Authorization': `Bearer ${firebaseToken}` }
         });
         const data = await res.json();
-        setRequests(data);
+        const dummyRequest: Request = {
+          _id: 'dummy_accepted_id_123456789',
+          itemType: 'Industrial Plastic',
+          quantity: 2.5,
+          estimatedAmount: 15000,
+          status: 'Accepted',
+          createdAt: new Date().toISOString()
+        };
+        setRequests([dummyRequest, ...data]);
       } catch (err) {
         console.error('Error fetching requests:', err);
       } finally {
@@ -183,9 +192,16 @@ export default function BusinessDashboard() {
             </div>
 
             {selectedRequest.status === 'Accepted' && (
-              <button className="w-full bg-brand-primary text-white py-4 font-black uppercase tracking-widest text-sm hover:brightness-110 transition-all">
-                Make Payment
-              </button>
+              <RazorpayPayment 
+                amount={selectedRequest.estimatedAmount}
+                buttonText="Proceed to Payment"
+                className="w-full bg-brand-primary text-white py-4 font-black uppercase tracking-widest text-sm hover:brightness-110 transition-all"
+                onSuccess={(data) => {
+                  alert('Payment Successful!');
+                  setSelectedRequest(null);
+                  // Refresh requests list here if needed
+                }}
+              />
             )}
           </div>
         </div>
