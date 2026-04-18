@@ -85,7 +85,7 @@ export default function DirectScanPage() {
           qrToken,
           status,
           workerId: workerMongoId,
-          municipalId: workerMongoId // Use real ID to avoid cast error
+          municipalId: workerMongoId
         })
       });
 

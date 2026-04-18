@@ -50,13 +50,26 @@ const verifyFirebaseToken = async (req, res, next) => {
     const decodedToken = await admin.auth().verifyIdToken(token);
 
     // Find MongoDB user associated with this Firebase UID
-    const user = await User.findOne({ firebaseUid: decodedToken.uid });
+    let user = await User.findOne({ firebaseUid: decodedToken.uid });
+    
+    // Fallback: If not found by UID, check by Email (especially for technical accounts like Admin/Worker)
+    if (!user) {
+      user = await User.findOne({ email: decodedToken.email });
+      if (user && !user.firebaseUid) {
+        // Automatically sync the UID if it was missing
+        user.firebaseUid = decodedToken.uid;
+        await user.save();
+      }
+    }
 
     req.user = {
       firebaseUid: decodedToken.uid,
       email: decodedToken.email,
       admin: decodedToken.admin || false,
-      role: user ? user.role : (decodedToken.email === 'admin@segrify.gov' ? 'municipal' : 'citizen'),
+      role: user ? user.role : (
+        decodedToken.email === 'admin@segrify.gov' ? 'municipal' : 
+        decodedToken.email === 'worker@segrify.gov' ? 'worker' : 'citizen'
+      ),
       mongoUser: user
     };
 

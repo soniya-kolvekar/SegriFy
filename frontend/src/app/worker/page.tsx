@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   QrCode, 
   Trash2, 
@@ -9,220 +9,394 @@ import {
   User as UserIcon,
   Camera,
   Search,
-  AlertCircle
+  LogOut,
+  XCircle,
+  Loader2,
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/context/useAuthStore';
-import { auth } from '@/lib/firebase';
-import { signOut } from 'firebase/auth';
+import { auth as firebaseAuth } from '@/lib/firebase';
+import { apiRequest } from '@/lib/api';
+
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export default function WorkerDashboard() {
+  const { user, logout } = useAuthStore();
   const router = useRouter();
-  const { user } = useAuthStore();
-  const [userId, setUserId] = useState('');
-  const [scannedUser, setScannedUser] = useState<any>(null);
-  const [alreadyScanned, setAlreadyScanned] = useState(false);
-  const [scanError, setScanError] = useState('');
+  
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [isScannerActive, setIsScannerActive] = useState(false);
+  const [isCameraStarting, setIsCameraStarting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [scannedData, setScannedData] = useState<string | null>(null);
+  const [targetUser, setTargetUser] = useState<any>(null);
+  const [alreadyScanned, setAlreadyScanned] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const showConfirmRef = useRef(false);
+
+  useEffect(() => {
+    showConfirmRef.current = showConfirm;
+  }, [showConfirm]);
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      if (typeof document !== 'undefined' && document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
 
   const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      useAuthStore.getState().logout();
-      router.replace('/login');
-    } catch (err) {
-      console.error('Logout error:', err);
-    }
+    await firebaseAuth.signOut();
+    logout();
+    router.push('/login');
   };
-  const headers = { Authorization: `Bearer ${useAuthStore.getState().firebaseToken}` };
 
-  const handleLookup = async () => {
-    if (!userId) return;
-    setScanError('');
-    setScannedUser(null);
-    setAlreadyScanned(false);
+  const handleQrScanned = async (data: string) => {
+    // Prevent multiple simultaneous lookups
+    if (isValidating) return;
+    
+    setScannedData(data);
+    setIsValidating(true);
+    
     try {
-      const res = await fetch(`http://localhost:5000/api/segregation/validate/${userId}`, { headers });
-      const data = await res.json();
-      if (res.ok) {
-        setScannedUser(data.user);
-        setAlreadyScanned(data.alreadyScanned);
+      const response = await apiRequest(`/api/segregation/validate/${data}`);
+      const result = await response.json();
+
+      if (response.ok) {
+        setTargetUser(result.user);
+        setAlreadyScanned(result.alreadyScanned);
+        setShowConfirm(true); 
       } else {
-        setScanError(data.message);
+        setStatus('error');
+        setMessage({ type: 'error', text: result.message || 'Unregistered or Invalid QR Code' });
+        // Auto-reset error after 3 seconds to allow re-scanning
+        setTimeout(() => {
+          setStatus('idle');
+          setMessage(null);
+          setScannedData(null);
+        }, 3000);
       }
-    } catch {
-      setScanError('Connection error');
+    } catch (err) {
+      setStatus('error');
+      setMessage({ type: 'error', text: 'Network identity check failed' });
+    } finally {
+      setIsValidating(false);
     }
   };
 
-  // Auto-lookup when userId is entered (throttled/debounced if needed, but simple for now)
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      if (userId.length >= 3) handleLookup();
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [userId]);
-
-  React.useEffect(() => {
-    if (!user) {
-      router.replace('/login');
-    } else if (user.role !== 'worker') {
-      router.replace('/dashboard');
-    }
-  }, [user, router]);
-
-  if (!user || user.role !== 'worker') return null;
-
-  const handleScanSimulation = async (isProper: boolean) => {
-    if (!userId) return alert('Please enter a User ID');
-    
+  const handleValidation = async (isProper: boolean) => {
     setStatus('loading');
-    
+    setSubmitting(true);
     try {
-      const response = await fetch('http://localhost:5000/api/segregation/update', {
+      const response = await apiRequest('/api/segregation/update', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          qrToken: userId,
+          qrToken: scannedData || 'manual_log',
           status: isProper ? 'proper' : 'improper',
-          workerId: user?.id || user?._id || 'SYSTEM'
-        })
+          workerId: user?.id || user?._id,
+          municipalId: user?.id || user?._id // Match the required payload
+        }),
       });
 
       if (response.ok) {
         setStatus('success');
-        setTimeout(() => setStatus('idle'), 3000);
+        setMessage({ type: 'success', text: 'Record updated successfully' });
+        setTimeout(() => {
+          setStatus('idle');
+          setIsScannerActive(false);
+          setShowConfirm(false);
+          setScannedData(null);
+          setMessage(null);
+        }, 2000);
       } else {
+        const data = await response.json();
         setStatus('error');
-        setTimeout(() => setStatus('idle'), 3000);
+        setMessage({ type: 'error', text: data.message || 'Update failed' });
+        setTimeout(() => setStatus('idle'), 2000);
       }
     } catch (err) {
-      console.error(err);
       setStatus('error');
+      setMessage({ type: 'error', text: 'Network error' });
+      setTimeout(() => setStatus('idle'), 2000);
+    } finally {
+      setSubmitting(false);
     }
   };
 
+  useEffect(() => {
+    let animationFrameId: number;
+    let mounted = true;
+    
+    async function startCamera() {
+      if (!isScannerActive || showConfirm || !mounted) return;
+      
+      setIsCameraStarting(true);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
+        });
+        
+        if (!mounted) {
+          stream.getTracks().forEach(t => t.stop());
+          return;
+        }
+
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+        setIsCameraStarting(false);
+
+        const scan = () => {
+          if (!mounted || showConfirmRef.current) return;
+          
+          if (videoRef.current && canvasRef.current && (window as any).jsQR) {
+            const video = videoRef.current;
+            const canvas = canvasRef.current;
+            const context = canvas.getContext('2d');
+            
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+              canvas.height = video.videoHeight;
+              canvas.width = video.videoWidth;
+              context?.drawImage(video, 0, 0, canvas.width, canvas.height);
+              
+              const imageData = context?.getImageData(0, 0, canvas.width, canvas.height);
+              if (imageData) {
+                const code = (window as any).jsQR(imageData.data, imageData.width, imageData.height, {
+                  inversionAttempts: "dontInvert",
+                });
+                
+                if (code) {
+                  handleQrScanned(code.data);
+                  return;
+                }
+              }
+            }
+          }
+          animationFrameId = requestAnimationFrame(scan);
+        };
+        animationFrameId = requestAnimationFrame(scan);
+
+      } catch (err) {
+        console.error("Camera Error:", err);
+        setIsCameraStarting(false);
+        setIsScannerActive(false);
+      }
+    }
+
+    if (isScannerActive && !showConfirm) {
+      startCamera();
+    }
+    
+    return () => {
+      mounted = false;
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      stopCamera();
+    };
+  }, [isScannerActive, showConfirm]);
+
   return (
-    <div className="min-h-screen bg-brand-primary p-6 flex flex-col items-center justify-center text-white font-sans antialiased">
-      <div className="w-full max-w-md space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <div className="bg-white/10 w-20 h-20 rounded-none mx-auto flex items-center justify-center shadow-none mb-6 border-4 border-white/20">
-            <QrCode className="w-10 h-10 text-brand-accent" />
+    <div className="min-h-screen bg-[#FDFBF7] flex flex-col font-sans">
+      <header className="h-20 bg-white border-b border-[#E5E1D8] flex items-center justify-between px-6 lg:px-10 sticky top-0 z-50">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-[#4D5443] flex items-center justify-center text-white">
+            <QrCode className="w-6 h-6" />
           </div>
-          <h1 className="text-3xl font-black uppercase tracking-tighter text-white">Worker Scanner</h1>
-          <p className="text-white/60 mt-2 font-black text-[10px] uppercase tracking-widest italic">Log waste segregation records instantly</p>
-          
-          <button 
-            onClick={handleLogout}
-            className="mt-6 mx-auto flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-all border border-white/10 text-[9px] font-black uppercase tracking-[0.2em]"
-          >
-            Leave Session
+          <div>
+            <h1 className="text-xl font-black tracking-tighter text-[#4D5443] leading-none">SegriFy Worker</h1>
+            <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mt-1">Field Validation Node</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <button onClick={handleLogout} className="flex items-center gap-2 text-gray-400 hover:text-red-600 transition-colors">
+            <LogOut className="w-4 h-4" />
+            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">Logout</span>
           </button>
-        </div>
-
-        {/* Mock Scanner View */}
-        <div className="relative bg-black rounded-none aspect-[3/4] overflow-hidden border-8 border-white/10 shadow-none group flex items-center justify-center">
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60"></div>
-          
-          {/* Scanning Animation */}
-          <div className="absolute inset-x-10 top-20 bottom-20 border-2 border-brand-accent/30 rounded-none flex items-center justify-center">
-             <div className="w-full h-1 bg-brand-accent shadow-[0_0_15px_rgba(249,115,22,0.8)] animate-pulse absolute top-1/2"></div>
-             <Camera className="w-16 h-16 text-white/10 group-hover:scale-110 transition-transform duration-500" />
+          <div className="w-10 h-10 bg-[#4D5443] flex items-center justify-center text-white">
+             <UserIcon className="w-6 h-6" />
           </div>
+        </div>
+      </header>
 
-          <div className="absolute bottom-8 left-0 right-0 px-8">
-            <p className="text-center text-[10px] font-black uppercase tracking-widest text-white/40 mb-4 bg-white/5 py-2 rounded-none backdrop-blur-sm border border-white/10">Align code within frame</p>
-            <div className="flex bg-white/10 rounded-none p-2 backdrop-blur-md border border-white/10">
-              <Search className="w-4 h-4 text-white/40 ml-3 mt-3" />
-              <input 
-                type="text" 
-                placeholder="MANUAL HOUSE ID..." 
-                className="bg-transparent border-none text-white font-black text-xs placeholder:text-white/20 focus:ring-0 p-3 flex-1 uppercase tracking-widest"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-              />
+      <main className="flex-1 p-4 lg:p-10 flex flex-col items-center justify-center">
+        <canvas ref={canvasRef} className="hidden" />
+        
+        <div className="w-full max-w-2xl bg-white p-6 lg:p-12 border border-[#E5E1D8] flex flex-col relative overflow-hidden shadow-2xl">
+          {!isScannerActive ? (
+            <div className="flex flex-col items-center justify-center text-center py-10">
+              <div className="w-24 h-24 bg-[#F9F7F2] flex items-center justify-center text-[#4D5443] border border-[#E5E1D8] mb-8">
+                <QrCode className="w-12 h-12" />
+              </div>
+              <h3 className="text-3xl font-black text-[#2D3128] tracking-tight mb-4 uppercase">Field Scanner</h3>
+              <p className="text-sm font-medium text-[#7A7D74] mb-10 max-w-sm">Scan resident QR codes to validate waste segregation and award points.</p>
+              
+              <div className="w-full space-y-4">
+                <button 
+                  onClick={() => setIsScannerActive(true)}
+                  className="w-full bg-[#4D5443] text-white py-5 font-black text-sm uppercase tracking-widest shadow-xl shadow-[#4D5443]/20 hover:scale-[1.02] transition-transform active:scale-95"
+                >
+                  Start Scanning
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div className="bg-white/5 rounded-none p-8 border border-white/10 backdrop-blur-xl">
-          {/* Status Indicators removed as per wasteType cleanup */}
-
-          {/* User Preview Section */}
-          <div className="mb-6">
-            {scannedUser ? (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white/10 p-4 border-l-4 border-brand-accent mb-4">
-                 <div className="flex justify-between items-start">
-                   <div>
-                     <p className="text-[10px] font-black text-brand-accent uppercase tracking-widest">Resident Identified</p>
-                     <h4 className="text-xl font-black text-white mt-1 uppercase tracking-tighter">
-                       {scannedUser.houseId || scannedUser.shopId || 'Unknown Unit'}
-                     </h4>
-                     <p className="text-[10px] font-bold text-white/40 uppercase mt-1">Owner: {scannedUser.name}</p>
-                   </div>
-                   {alreadyScanned && (
-                     <div className="bg-amber-500/20 px-2 py-1 border border-amber-500/50">
-                        <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Done Today</p>
-                     </div>
-                   )}
-                 </div>
-                 {alreadyScanned && (
-                   <p className="text-[9px] font-bold text-amber-400 mt-2 uppercase flex items-center gap-1">
-                     <AlertCircle className="w-3 h-3" /> This unit has already been processed today.
-                   </p>
-                 )}
-              </motion.div>
-            ) : scanError ? (
-              <div className="bg-red-900/40 p-4 border-l-4 border-red-500 mb-4 animate-pulse">
-                <p className="text-[10px] font-black text-red-400 uppercase tracking-widest">Error</p>
-                <p className="text-sm font-bold text-white mt-1 uppercase">{scanError}</p>
+          ) : (
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-8 pb-6 border-b border-[#F0EEE9]">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-[#F9F7F2] flex items-center justify-center text-[#4D5443] border border-[#E5E1D8]">
+                    <QrCode className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-lg font-black text-[#2D3128] uppercase tracking-tight">
+                    {showConfirm ? 'Validation' : 'Active Camera'}
+                  </h3>
+                </div>
+                
+                <button 
+                  onClick={() => {
+                    stopCamera();
+                    setIsScannerActive(false);
+                    setShowConfirm(false);
+                    setScannedData(null);
+                  }} 
+                  className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
               </div>
-            ) : userId.length > 0 ? (
-              <div className="text-center py-4 text-white/20 text-[10px] font-black uppercase tracking-widest italic animate-pulse">
-                Scanning for matches...
-              </div>
-            ) : (
-              <div className="text-center py-4 text-white/20 text-[10px] font-black uppercase tracking-widest">
-                Waiting for input...
-              </div>
-            )}
-          </div>
 
-          <div className="space-y-4">
-            <button 
-              onClick={() => handleScanSimulation(true)}
-              disabled={status === 'loading' || !scannedUser || alreadyScanned}
-              className="w-full py-5 rounded-none bg-green-600 hover:brightness-110 text-white font-black text-sm uppercase tracking-widest transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3 border border-green-500/30"
-            >
-              <CheckCircle2 className="w-5 h-5" />
-              PROPERLY SEGREGATED
-            </button>
-            <button 
-              onClick={() => handleScanSimulation(false)}
-              disabled={status === 'loading' || !scannedUser || alreadyScanned}
-              className="w-full py-5 rounded-none bg-red-600 hover:brightness-110 text-white font-black text-sm uppercase tracking-widest transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3 border border-red-500/30"
-            >
-               <Trash2 className="w-5 h-5" />
-               IMPROPER SEGREGATION
-            </button>
-          </div>
-        </div>
-      </div>
+              {!showConfirm ? (
+                <div className="aspect-square bg-[#0a0a0a] relative overflow-hidden border-4 border-[#F9F7F2] shadow-inner flex items-center justify-center">
+                  {isCameraStarting && (
+                    <div className="absolute inset-0 z-10 bg-[#0a0a0a] flex flex-col items-center justify-center gap-4">
+                      <Loader2 className="w-8 h-8 text-[#4D5443] animate-spin" />
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Warming Up Lens...</p>
+                    </div>
+                  )}
+                  <video 
+                    ref={videoRef}
+                    autoPlay 
+                    playsInline 
+                    muted
+                    className={cn(
+                      "w-full h-full object-cover transition-all duration-700",
+                      isCameraStarting || isValidating ? "brightness-50" : "brightness-100"
+                    )}
+                  />
+                  
+                  {isValidating && (
+                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-[#4D5443]/20 backdrop-blur-sm animate-in fade-in duration-300">
+                      <div className="p-4 bg-white/90">
+                        <Loader2 className="w-8 h-8 text-[#4D5443] animate-spin" />
+                      </div>
+                      <p className="text-[10px] font-black text-white uppercase tracking-widest drop-shadow-md">Verifying Resident Identity...</p>
+                    </div>
+                  )}
 
-      {/* Status Toasts */}
-      {status === 'success' && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-green-600 text-white px-8 py-4 rounded-none font-black text-[10px] uppercase tracking-widest shadow-2xl animate-in fade-in slide-in-from-bottom-5 border border-green-400/30">
-          Record updated successfully
+                  {!isCameraStarting && !isValidating && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-64 h-64 border-2 border-white/20 relative">
+                        <div className="absolute -top-1 -left-1 w-12 h-12 border-t-4 border-l-4 border-white" />
+                        <div className="absolute -top-1 -right-1 w-12 h-12 border-t-4 border-r-4 border-white" />
+                        <div className="absolute -bottom-1 -left-1 w-12 h-12 border-b-4 border-l-4 border-white" />
+                        <div className="absolute -bottom-1 -right-1 w-12 h-12 border-b-4 border-r-4 border-white" />
+                        
+                        {/* Scanning line animation */}
+                        <div className="absolute top-0 left-0 w-full h-[2px] bg-white/40 shadow-[0_0_15px_rgba(255,255,255,0.8)] animate-scan-slow" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="animate-in fade-in zoom-in duration-200">
+                  {message ? (
+                    <div className={`p-8 text-center border-2 ${message.type === 'success' ? 'border-green-500 bg-green-50 text-green-700' : 'border-red-500 bg-red-50 text-red-700'}`}>
+                      {message.type === 'success' ? <CheckCircle2 className="w-16 h-16 mx-auto mb-4" /> : <XCircle className="w-16 h-16 mx-auto mb-4" />}
+                      <h4 className="text-xl font-black uppercase mb-2">{message.type === 'success' ? 'Success' : 'Error'}</h4>
+                      <p className="font-bold">{message.text}</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-8">
+                      <div className="bg-[#F9F7F2] p-6 text-center border border-[#E5E1D8]">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Resident Identity</p>
+                        <h4 className="text-xl font-black text-[#4D5443] break-all">
+                          {targetUser?.name || 'Resident'}
+                        </h4>
+                        <p className="text-[10px] font-bold text-[#7A7D74] mt-2">
+                           ID: {targetUser?.houseId || targetUser?.shopId || 'N/A'}
+                        </p>
+                      </div>
+
+                      {alreadyScanned && (
+                        <div className="bg-amber-50 p-4 border border-amber-200 flex items-center gap-3">
+                          <AlertTriangle className="w-5 h-5 text-amber-600" />
+                          <p className="text-[10px] font-bold text-amber-800 uppercase leading-relaxed">
+                            Already verified today.
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="bg-[#F9F7F2] p-6 border border-[#E5E1D8] space-y-6">
+                        <div className="space-y-4">
+                          <button
+                            onClick={() => handleValidation(true)}
+                            disabled={submitting || alreadyScanned}
+                            className="w-full py-5 rounded-none bg-green-600 hover:bg-green-700 text-white font-black text-sm uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 shadow-lg shadow-green-600/20"
+                          >
+                            {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                            PROPERLY SEGREGATED
+                          </button>
+                          <button
+                            onClick={() => handleValidation(false)}
+                            disabled={submitting || alreadyScanned}
+                            className="w-full py-5 rounded-none bg-red-600 hover:bg-red-700 text-white font-black text-sm uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 shadow-lg shadow-red-600/20"
+                          >
+                            {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
+                            IMPROPER SEGREGATION
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <button 
+                        onClick={() => { setShowConfirm(false); setScannedData(null); }}
+                        className="w-full py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-[#4D5443] transition-colors text-center"
+                      >
+                        Rescan QR
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      )}
-      {status === 'error' && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-8 py-4 rounded-none font-black text-[10px] uppercase tracking-widest shadow-2xl animate-in fade-in slide-in-from-bottom-5 border border-red-400/30">
-          Failed to update record
-        </div>
-      )}
+      </main>
+
+      <footer className="p-8 text-center text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
+        © 2024 SEGRIFY MUNICIPAL INFRASTRUCTURE. FIELD NODE.
+      </footer>
     </div>
   );
 }
