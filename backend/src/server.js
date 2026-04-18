@@ -17,7 +17,12 @@ const io = new Server(server, {
 });
 
 // Middleware
-app.use(cors());
+const frontendUrl = process.env.FRONTEND_URL || '*';
+app.use(cors({
+  origin: frontendUrl,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Socket.IO Logic
