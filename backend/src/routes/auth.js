@@ -84,7 +84,7 @@ router.get('/me', verifyFirebaseToken, async (req, res) => {
 // Update User Profile (Used for Business Onboarding)
 router.patch('/update-profile', verifyFirebaseToken, async (req, res) => {
   try {
-    const { businessName, aadhaarNo, panCard, industrySector, phone, pickupAddress, name } = req.body;
+    const { businessName, aadhaarNo, panCard, shopId, industrySector, phone, pickupAddress, name } = req.body;
     const firebaseUid = req.user.firebaseUid;
     const mongoUser = req.user.mongoUser;
 
@@ -106,18 +106,25 @@ router.patch('/update-profile', verifyFirebaseToken, async (req, res) => {
         updatePayload.aadhaarNo = aadhaarNo;
     }
     if (!mongoUser.panCard && panCard) {
-        // Check for uniqueness before updating
         const existingPan = await User.findOne({ panCard });
         if (existingPan) {
-            return res.status(400).json({ message: 'This PAN number is already associated with another business account.' });
+            return res.status(400).json({ message: 'This PAN number is already associated with another account.' });
         }
         updatePayload.panCard = panCard;
+    }
+
+    if (!mongoUser.shopId && shopId) {
+        const existingShop = await User.findOne({ shopId });
+        if (existingShop) {
+            return res.status(400).json({ message: 'This Shop/Registration ID is already in use.' });
+        }
+        updatePayload.shopId = shopId;
     }
 
     const user = await User.findOneAndUpdate(
       { firebaseUid },
       updatePayload,
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!user) {
