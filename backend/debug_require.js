@@ -1,0 +1,10 @@
+const express = require('express');
+console.log('Express loaded');
+const mongoose = require('mongoose');
+console.log('Mongoose loaded');
+const User = require('./src/models/User');
+console.log('User model loaded');
+const Complaint = require('./src/models/Complaint');
+console.log('Complaint model loaded');
+const homeownerRoutes = require('./src/routes/homeowner');
+console.log('Homeowner routes loaded');

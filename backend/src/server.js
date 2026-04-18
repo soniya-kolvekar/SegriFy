@@ -39,11 +39,13 @@ app.use((req, res, next) => {
 const authRoutes = require('./routes/auth');
 const segregationRoutes = require('./routes/segregation');
 const dashboardRoutes = require('./routes/dashboard');
+const homeownerRoutes = require('./routes/homeowner');
 const businessRoutes = require('./routes/business');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/segregation', segregationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/homeowner', homeownerRoutes);
 app.use('/api/business', businessRoutes);
 
 // Routes Placeholder
@@ -52,18 +54,19 @@ app.get('/', (req, res) => {
 });
 
 // Connect to MongoDB
-const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/segrify';
+const PORT = process.env.PORT || 5005; // Using 5005 as per frontend expectation
+const MONGO_URI = process.env.MONGO_URI;
 
+console.log('Connecting to MongoDB...');
 mongoose.connect(MONGO_URI)
   .then(() => {
-    console.log('MongoDB connected successfully');
+    console.log('✅ MongoDB connected successfully');
     server.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+      console.log(`🚀 Server is running on port ${PORT}`);
     });
   })
   .catch(err => {
-    console.error('MongoDB connection error:', err);
+    console.error('❌ MongoDB connection error:', err.message);
   });
 
 // Handle real-time event distribution

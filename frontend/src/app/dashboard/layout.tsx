@@ -5,6 +5,7 @@ import Sidebar from '@/components/Sidebar';
 import { useAuthStore } from '@/context/useAuthStore';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { Search, Bell, Settings } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
@@ -26,7 +27,7 @@ export default function DashboardLayout({
     }
   }, [user, pathname, router]);
 
-  if (!user) return null; // Or a loading skeleton
+  if (!user) return null;
 
   const getInitials = (name: string) => {
     return name
@@ -40,34 +41,48 @@ export default function DashboardLayout({
   const profileHref = user.role === 'business' ? '/dashboard/business/profile' : '/dashboard/profile';
 
   return (
-    <div className="flex bg-brand-bg min-h-screen">
+    <div className="flex bg-[#F5F4F0] min-h-screen font-sans">
       <Sidebar />
       <main className="flex-1 ml-64 min-h-screen overflow-y-auto font-sans antialiased">
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-brand-muted flex items-center justify-between px-10 sticky top-0 z-40">
-          <div className="flex-1"></div>
+        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-[#E5E2D9] flex items-center justify-between px-10 sticky top-0 z-40">
+          <div className="flex items-center gap-8 flex-1">
+             <div className="relative w-full max-w-md group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A7D74] group-focus-within:text-[#2D3128] transition-colors" />
+                <input 
+                  type="text" 
+                  placeholder="Search infrastructure data..." 
+                  className="w-full bg-[#EBE9E0]/50 border-none rounded-none py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-[#4D5443]/20 focus:bg-white transition-all outline-none"
+                />
+             </div>
+          </div>
 
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-6 text-brand-primary/40">
-               <div className="relative cursor-pointer hover:text-brand-primary transition-colors">
-                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                 <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-none border border-white"></div>
-               </div>
-               <svg className="w-5 h-5 cursor-pointer hover:text-brand-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2 text-[#7A7D74] mr-4 hidden lg:flex">
+              <span className="text-[10px] font-black uppercase tracking-widest">
+                {user.role === 'business' ? 'Commercial Portal' : 'Residential Portal'}
+              </span>
             </div>
 
-            <div className="h-8 w-px bg-brand-muted"></div>
+            <button className="p-2 hover:bg-[#EBE9E0] rounded-none transition-colors relative">
+               <Bell className="w-5 h-5 text-[#2D3128]" />
+               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-none border border-white"></span>
+            </button>
+            <button className="p-2 hover:bg-[#EBE9E0] rounded-none transition-colors">
+               <Settings className="w-5 h-5 text-[#2D3128]" />
+            </button>
+            
+            <div className="h-8 w-px bg-[#E5E2D9]"></div>
 
-            <div className="flex items-center gap-4">
-              <span className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest hidden lg:block">Business Waste Management Portal</span>
-              <Link href={profileHref}>
-                <div className="w-10 h-10 bg-brand-primary flex items-center justify-center text-white font-black text-xs hover:brightness-110 transition-all cursor-pointer rounded-none">
-                  {getInitials(user.name)}
-                </div>
-              </Link>
-            </div>
+            <Link href={profileHref}>
+              <div className="w-10 h-10 bg-[#4D5443] flex items-center justify-center text-white font-black text-xs hover:brightness-110 transition-all cursor-pointer rounded-none">
+                {getInitials(user.name || user.email)}
+              </div>
+            </Link>
           </div>
         </header>
-        {children}
+        <div className="max-w-[1600px] mx-auto">
+          {children}
+        </div>
       </main>
     </div>
   );
