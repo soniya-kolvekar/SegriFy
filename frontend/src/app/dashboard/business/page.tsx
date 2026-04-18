@@ -39,15 +39,7 @@ export default function BusinessDashboard() {
           headers: { 'Authorization': `Bearer ${firebaseToken}` }
         });
         const data = await res.json();
-        const dummyRequest: Request = {
-          _id: 'dummy_accepted_id_123456789',
-          itemType: 'Industrial Plastic',
-          quantity: 2.5,
-          estimatedAmount: 15000,
-          status: 'Accepted',
-          createdAt: new Date().toISOString()
-        };
-        setRequests([dummyRequest, ...data]);
+        setRequests(data);
       } catch (err) {
         console.error('Error fetching requests:', err);
       } finally {

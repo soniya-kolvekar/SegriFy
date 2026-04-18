@@ -98,10 +98,6 @@ export default function Sidebar() {
 
       {/* Footer Section */}
       <div className="p-4 space-y-2">
-        <button className="flex items-center gap-4 px-4 py-3 w-full rounded-none hover:bg-[#EBE9E0] text-[#7A7D74] hover:text-[#2D3128] transition-colors">
-          <HelpCircle className="w-5 h-5" />
-          <span className="font-bold text-sm uppercase">Support</span>
-        </button>
 
         <button 
           onClick={handleLogout}
