@@ -2,17 +2,15 @@
 
 import React, { useState } from 'react';
 import { 
-  Building2, 
-  CreditCard, 
-  Hash, 
-  ShieldCheck, 
-  User, 
   Edit3, 
-  Save, 
   Mail,
-  MapPin
+  MapPin,
+  Plus,
+  Leaf,
+  FileText
 } from 'lucide-react';
 import { useAuthStore } from '@/context/useAuthStore';
+import { useEffect } from 'react';
 
 export default function BusinessProfilePage() {
   const { user, firebaseToken, setAuth } = useAuthStore();
@@ -26,8 +24,25 @@ export default function BusinessProfilePage() {
   });
   const [message, setMessage] = useState('');
 
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        businessName: user.businessName || '',
+        aadhaarNo: user.aadhaarNo || '',
+        panCard: user.panCard || '',
+        shopNumber: user.shopNumber || ''
+      });
+    }
+  }, [user]);
+
   const handleSave = async () => {
     setLoading(true);
+    if (!firebaseToken) {
+      setMessage('Error: Authentication token missing. Please log in again.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch('http://localhost:5000/api/auth/update-profile', {
         method: 'PATCH',

@@ -1,28 +1,47 @@
-@import "tailwindcss/base";
-@import "tailwindcss/components";
-@import "tailwindcss/utilities";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
   :root {
-    --background: 45 30% 96%;
-    --foreground: 60 5% 15%;
-    --card: 0 0% 100%;
-    --card-foreground: 60 5% 15%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 60 5% 15%;
-    --primary: 60 13% 32%;
-    --primary-foreground: 45 30% 96%;
-    --secondary: 45 20% 92%;
-    --secondary-foreground: 60 13% 32%;
-    --muted: 45 10% 85%;
-    --muted-foreground: 60 5% 40%;
-    --accent: 60 13% 32%;
-    --accent-foreground: 45 30% 96%;
+    /* Brand Palette - Direct mapping from requested RGB values */
+    --white-smoke: 242 244 241;
+    --dark-khaki: 91 100 53;
+    --dark-khaki-light: 151 167 88;
+    --dusty-olive: 123 130 74;
+    --dry-sage: 161 162 93;
+    --ash-brown: 60 49 42;
+    --ash-brown-muted: 119 99 85;
+
+    /* Base theme mapping */
+    --background: var(--white-smoke);
+    --foreground: var(--ash-brown);
+    
+    --card: 255 255 255;
+    --card-foreground: var(--ash-brown);
+    
+    --popover: 255 255 255;
+    --popover-foreground: var(--ash-brown);
+    
+    --primary: var(--dark-khaki);
+    --primary-foreground: var(--white-smoke);
+    
+    --secondary: 234 237 222; /* Dark Khaki 100 */
+    --secondary-foreground: var(--dark-khaki);
+    
+    --muted: 230 233 226; /* White smoke 100 */
+    --muted-foreground: var(--ash-brown-muted);
+    
+    --accent: var(--dry-sage);
+    --accent-foreground: var(--white-smoke);
+    
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 45 15% 85%;
-    --input: 45 15% 85%;
-    --ring: 60 13% 32%;
+    
+    --border: 204 210 198; /* White smoke 200 */
+    --input: 204 210 198;
+    --ring: var(--dark-khaki);
+    
     --radius: 0rem;
   }
 }
@@ -32,21 +51,23 @@
     @apply border-border;
   }
   body {
-    @apply bg-brand-bg text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading font-semibold tracking-tight;
   }
 }
 
-.glass-card {
-  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-sm;
-}
+@layer components {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-sm;
+  }
 
-.calendar-cell-proper {
-  @apply bg-green-100 border-green-200 text-green-700;
-}
+  .calendar-cell-proper {
+    @apply bg-green-100 border-green-200 text-green-700;
+  }
 
-.calendar-cell-improper {
-  @apply bg-red-100 border-red-200 text-red-700;
+  .calendar-cell-improper {
+    @apply bg-red-100 border-red-200 text-red-700;
+  }
 }
