@@ -2,7 +2,7 @@ const admin = require('firebase-admin');
 const User = require('../models/User');
 
 // Load project ID from env
-const projectId = process.env.FIREBASE_PROJECT_ID || 'segrify-3e66f';
+const projectId = process.env.FIREBASE_PROJECT_ID;
 
 let serviceAccount;
 try {
@@ -12,7 +12,7 @@ try {
   try {
     serviceAccount = require('../firebase-service-account.json');
   } catch (err) {
-    console.warn("⚠️ Firebase service account file not found. Auth will rely on Project ID or Dev Bypass.");
+    console.warn("⚠️ Firebase service account file not found.");
   }
 }
 
@@ -21,15 +21,16 @@ if (!admin.apps.length) {
         if (serviceAccount) {
             admin.initializeApp({
                 credential: admin.credential.cert(serviceAccount),
-                projectId: projectId
+                projectId: serviceAccount.project_id || projectId
             });
-            console.log("✅ Firebase Admin initialized with Service Account.");
-        } else {
-            // Initialize with just Project ID - may allow token verification in some environments
+            console.log(`✅ Firebase Admin initialized for project: ${serviceAccount.project_id || projectId}`);
+        } else if (projectId) {
             admin.initializeApp({
                 projectId: projectId
             });
             console.log(`ℹ️ Firebase Admin initialized with Project ID: ${projectId} (No Service Account)`);
+        } else {
+            console.warn("❌ Firebase Admin could not be initialized: Missing Project ID and Service Account.");
         }
     } catch (e) {
         console.warn("❌ Firebase Admin Initialization Failed:", e.message);
