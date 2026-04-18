@@ -9,12 +9,19 @@ import {
 import { useAuthStore } from '@/context/useAuthStore';
 
 export default function MunicipalDashboard() {
+  const envApi = process.env.NEXT_PUBLIC_API_URL;
+  const API = (envApi && envApi !== '/') ? envApi : 'http://localhost:5000';
   const [analytics, setAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isScannerActive, setIsScannerActive] = useState(false);
   const [validationType, setValidationType] = useState<'proper' | 'improper' | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [alreadyScanned, setAlreadyScanned] = useState(false);
   const [scannedData, setScannedData] = useState<string | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [houseId, setHouseId] = useState<string | null>(null);
+  const [residentName, setResidentName] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -87,14 +94,54 @@ export default function MunicipalDashboard() {
               const imageData = context?.getImageData(0, 0, canvas.width, canvas.height);
               if (imageData) {
                 const code = (window as any).jsQR(imageData.data, imageData.width, imageData.height, {
-                  inversionAttempts: "dontInvert",
+                  inversionAttempts: "attemptBoth",
                 });
                 
-                if (code) {
-                  setScannedData(code.data);
+                if (code && code.data && code.data.trim() !== "") {
+                  const token = code.data.trim();
+                  setScannedData(token);
                   setShowConfirm(true);
+                  setIsValidating(true);
                   if (timeoutId) clearTimeout(timeoutId);
-                  return; // Stop scan loop
+                  
+                  // URL Encode the token to handle special characters like '#'
+                  const encodedToken = encodeURIComponent(token);
+                  const fetchUrl = `${API}/api/segregation/validate/${encodedToken}`;
+                  
+                  console.log("Scanner: Initiating verification for", token);
+                  console.log("Scanner: Requesting URL", fetchUrl);
+
+                  fetch(fetchUrl, {
+                    headers: { 'Authorization': `Bearer ${useAuthStore.getState().firebaseToken}` }
+                  })
+                  .then(async r => {
+                    const contentType = r.headers.get("content-type");
+                    if (!contentType || !contentType.includes("application/json")) {
+                       const text = await r.text();
+                       console.error("Non-JSON response received from", fetchUrl, ":", text.substring(0, 100));
+                       throw new Error("Server returned non-JSON response. Please check if backend is running on port 5000.");
+                    }
+                    const data = await r.json();
+                    if (!r.ok) throw new Error(data.message || 'Verification Failed');
+                    return data;
+                  })
+                  .then(data => {
+                    if (data.user) {
+                      setHouseId(data.user.houseId || data.user.shopId);
+                      setResidentName(data.user.name);
+                      setAlreadyScanned(data.alreadyScanned);
+                    } else {
+                      setScanError("Resident not found in database.");
+                      setAlreadyScanned(true);
+                    }
+                  })
+                  .catch((err) => {
+                    console.error("QR Validation Error:", err);
+                    setScanError(err.message === 'Failed to fetch' ? "CORS/Network Issue" : err.message);
+                  })
+                  .finally(() => setIsValidating(false));
+
+                  return;
                 }
               }
             }
@@ -125,7 +172,7 @@ export default function MunicipalDashboard() {
       const token = useAuthStore.getState().firebaseToken;
       if (!token) return;
       try {
-        const response = await fetch('http://localhost:5000/api/dashboard/analytics/city', {
+        const response = await fetch(`${API}/api/dashboard/analytics/city`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
@@ -139,13 +186,42 @@ export default function MunicipalDashboard() {
     fetchAnalytics();
   }, []);
 
-  const handleValidation = (isProper: boolean) => {
-    console.log(`Scanned QR: ${scannedData}, Proper: ${isProper}`);
-    stopCamera(); // SHUT DOWN IMMEDIATELY
-    setIsScannerActive(false);
-    setShowConfirm(false);
-    setScannedData(null);
-    setValidationType(null);
+  const handleValidation = async (isProper: boolean) => {
+    if (alreadyScanned || isValidating || scanError) return;
+
+    const token = useAuthStore.getState().firebaseToken;
+    try {
+      const response = await fetch(`${API}/api/segregation/update`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          qrToken: scannedData,
+          status: isProper ? 'proper' : 'improper',
+          municipalId: useAuthStore.getState().user?.id // Log as Municipal Person
+        })
+      });
+
+      if (response.ok) {
+        console.log(`Successfully logged segregation for ${houseId}`);
+        stopCamera();
+        setIsScannerActive(false);
+        setShowConfirm(false);
+        setScannedData(null);
+        setScanError(null);
+        setHouseId(null);
+        setResidentName(null);
+        setAlreadyScanned(false);
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Failed to update record');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error');
+    }
   };
 
   return (
@@ -216,40 +292,81 @@ export default function MunicipalDashboard() {
                 </div>
               </div>
             ) : (
-              <div className="bg-white p-6 lg:p-12 border-2 border-brand-primary text-center animate-in fade-in zoom-in duration-200 shadow-2xl">
-                <div className="w-12 h-12 lg:w-16 lg:h-16 bg-brand-primary/10 text-brand-primary flex items-center justify-center mx-auto mb-4 lg:mb-6">
-                   <QrCode className="w-6 h-6 lg:w-8 lg:h-8" />
-                </div>
-                <p className="text-[10px] lg:text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Identity Verified</p>
-                <h4 className="text-lg lg:text-xl font-black text-brand-primary mb-6 lg:mb-8 break-all">{scannedData}</h4>
-                
-                <p className="text-xl lg:text-2xl font-bold text-brand-primary mb-8 lg:mb-10 leading-tight">
-                  Is the waste properly segregated?
-                </p>
-                
-                <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-                  <button 
-                    onClick={() => handleValidation(true)}
-                    className="flex-1 bg-green-600 text-white py-4 lg:py-6 text-xs lg:text-sm font-black uppercase tracking-widest shadow-lg shadow-green-600/10 hover:bg-green-700 transition-all flex items-center justify-center gap-3"
-                  >
-                    <CheckCircle2 className="w-5 h-5" />
-                    Yes
-                  </button>
-                  <button 
-                    onClick={() => handleValidation(false)}
-                    className="flex-1 bg-red-600 text-white py-4 lg:py-6 text-xs lg:text-sm font-black uppercase tracking-widest shadow-lg shadow-red-600/10 hover:bg-red-700 transition-all flex items-center justify-center gap-3"
-                  >
-                    <XCircle className="w-5 h-5" />
-                    No
-                  </button>
-                </div>
-                
-                <button 
-                  onClick={() => { setShowConfirm(false); setScannedData(null); }}
-                  className="mt-8 text-[10px] font-black text-gray-300 uppercase tracking-widest hover:text-brand-primary transition-colors"
-                >
-                  Rescan QR
-                </button>
+              <div className="bg-white p-6 lg:p-12 border-2 border-brand-primary text-center animate-in fade-in zoom-in duration-200 shadow-2xl min-h-[400px] flex flex-col justify-center">
+                {isValidating ? (
+                  <div className="space-y-4 py-10">
+                    <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Verifying Identity...</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-12 h-12 lg:w-16 lg:h-16 bg-brand-primary/10 text-brand-primary flex items-center justify-center mx-auto mb-4 lg:mb-6">
+                       <QrCode className="w-6 h-6 lg:w-8 lg:h-8" />
+                    </div>
+                    
+                    <p className="text-[10px] lg:text-xs font-black text-gray-400 uppercase tracking-widest mb-2">
+                       {alreadyScanned ? 'Verification Alert' : 'Identity Verified'}
+                    </p>
+                    <h4 className="text-xl lg:text-3xl font-black text-brand-primary mb-1 uppercase tracking-tighter">
+                       {houseId || scannedData}
+                    </h4>
+                    {residentName && (
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6 lg:mb-8 italic">
+                         Owner: {residentName}
+                      </p>
+                    )}
+                    
+                    {scanError ? (
+                      <div className="bg-red-50 border border-red-200 p-6 mb-8">
+                        <p className="text-sm font-bold text-red-700 uppercase tracking-tight">
+                           🚫 {scanError}
+                        </p>
+                        <p className="text-[9px] font-black text-red-400 uppercase tracking-widest mt-2">
+                           Please check your internet connection or try re-scanning.
+                        </p>
+                      </div>
+                    ) : alreadyScanned ? (
+                      <div className="bg-amber-50 border border-amber-200 p-6 mb-8">
+                        <p className="text-sm font-bold text-amber-700 uppercase tracking-tight">
+                           ⚠️ This unit has already been processed today.
+                        </p>
+                        <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest mt-2">
+                           Validation cycles are limited to once per day.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-xl lg:text-2xl font-black text-brand-primary mb-8 lg:mb-10 leading-tight">
+                          Is the waste properly segregated?
+                        </p>
+                        
+                        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+                          <button 
+                            onClick={() => handleValidation(true)}
+                            className="flex-1 bg-green-600 text-white py-4 lg:py-6 text-xs lg:text-sm font-black uppercase tracking-widest shadow-lg shadow-green-600/10 hover:bg-green-700 transition-all flex items-center justify-center gap-3"
+                          >
+                            <CheckCircle2 className="w-5 h-5" />
+                            Yes, Proper
+                          </button>
+                          <button 
+                            onClick={() => handleValidation(false)}
+                            className="flex-1 bg-red-600 text-white py-4 lg:py-6 text-xs lg:text-sm font-black uppercase tracking-widest shadow-lg shadow-red-600/10 hover:bg-red-700 transition-all flex items-center justify-center gap-3"
+                          >
+                            <XCircle className="w-5 h-5" />
+                            No, Improper
+                          </button>
+                        </div>
+                      </>
+                    )}
+                    
+                    <button 
+                      onClick={() => { setShowConfirm(false); setScannedData(null); setScanError(null); setAlreadyScanned(false); setHouseId(null); }}
+                      className="mt-8 text-[10px] font-black text-gray-300 uppercase tracking-widest hover:text-brand-primary transition-colors"
+                    >
+                      Cancel / Rescan
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>

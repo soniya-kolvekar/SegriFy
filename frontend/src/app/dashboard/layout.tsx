@@ -17,12 +17,32 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   useEffect(() => {
-    if (user && user.role === 'business') {
+    if (!user) {
+      router.replace('/login');
+      return;
+    }
+
+    if (user.role === 'municipal') {
+      router.replace('/municipal');
+      return;
+    }
+
+    if (user.role === 'worker') {
+      router.replace('/worker');
+      return;
+    }
+
+    // Role-based Setup Guards
+    if (user.role === 'business') {
       const isProfileComplete = user.businessName && user.aadhaarNo && user.panCard;
       const isOnboardingPage = pathname === '/dashboard/business/onboarding';
-
       if (!isProfileComplete && !isOnboardingPage) {
         router.push('/dashboard/business/onboarding');
+      }
+    } else if (user.role.startsWith('citizen')) {
+      // Check for mandatory houseId registration
+      if (!user.houseId) {
+        router.push('/setup');
       }
     }
   }, [user, pathname, router]);

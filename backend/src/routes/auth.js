@@ -29,7 +29,10 @@ router.post('/sync', verifyFirebaseToken, async (req, res) => {
         user.firebaseUid = firebaseUid;
         await user.save();
       }
-      return res.status(200).json({ message: 'User already synced', user });
+      return res.status(200).json({ 
+        message: 'User already synced', 
+        user: { ...user.toObject(), id: user._id } 
+      });
     }
 
     // Generate QR token based on houseId (primary key) so it is unique per house.
@@ -56,7 +59,10 @@ router.post('/sync', verifyFirebaseToken, async (req, res) => {
     await user.save();
 
 
-    res.status(201).json({ message: 'User successfully synced to database', user });
+    res.status(201).json({ 
+      message: 'User successfully synced to database', 
+      user: { ...user.toObject(), id: user._id } 
+    });
   } catch (err) {
     console.error('Sync Error:', err);
     res.status(500).json({ message: err.message });
@@ -69,7 +75,8 @@ router.get('/me', verifyFirebaseToken, async (req, res) => {
     if (!req.user.mongoUser) {
       return res.status(404).json({ message: 'User profile not found in database' });
     }
-    res.json({ user: req.user.mongoUser });
+    const userObj = req.user.mongoUser.toObject();
+    res.json({ user: { ...userObj, id: userObj._id } });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -100,6 +107,11 @@ router.patch('/update-profile', verifyFirebaseToken, async (req, res) => {
         updatePayload.aadhaarNo = aadhaarNo;
     }
     if (!mongoUser.panCard && panCard) {
+        // Check for uniqueness before updating
+        const existingPan = await User.findOne({ panCard });
+        if (existingPan) {
+            return res.status(400).json({ message: 'This PAN number is already associated with another business account.' });
+        }
         updatePayload.panCard = panCard;
     }
 
@@ -113,7 +125,10 @@ router.patch('/update-profile', verifyFirebaseToken, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json({ message: 'Profile updated successfully', user });
+    res.json({ 
+      message: 'Profile updated successfully', 
+      user: { ...user.toObject(), id: user._id } 
+    });
   } catch (err) {
     console.error('Update Profile Error:', err);
     res.status(500).json({ message: err.message });

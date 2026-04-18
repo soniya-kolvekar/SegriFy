@@ -1,38 +1,64 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { Gavel, Filter, Download, X, MoreVertical, User, AlertCircle, CheckCircle2, ReceiptText, Wallet } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { Gavel, Filter, Download, X, MoreVertical, User, AlertCircle, CheckCircle2, ReceiptText, Wallet, Loader2 } from 'lucide-react';
+import { useAuthStore } from '@/context/useAuthStore';
+import { format } from 'date-fns';
 
 export default function FinesPage() {
+  const envApi = process.env.NEXT_PUBLIC_API_URL;
+  const API = (envApi && envApi !== '/') ? envApi : 'http://localhost:5000';
+  const { firebaseToken: token } = useAuthStore();
+  
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilter, setActiveFilter] = useState('ALL');
+  const [allFines, setAllFines] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [fines, setFines] = useState([
-    { id: 'FINE-9021', homeowner: 'Rajesh Kumar', violations: 4, ward: 'Ward 12', amount: 500, status: 'PENDING', date: 'Oct 24, 2024' },
-    { id: 'FINE-8842', homeowner: 'Priya Singh', violations: 3, ward: 'Sector 4', amount: 250, status: 'PENDING', date: 'Oct 23, 2024' },
-    { id: 'FINE-8701', homeowner: 'Amit Verma', violations: 5, ward: 'Ward 9', amount: 750, status: 'COLLECTED', date: 'Oct 22, 2024' },
-    { id: 'FINE-8654', homeowner: 'Sunita Devi', violations: 3, ward: 'Ward 15', amount: 250, status: 'COLLECTED', date: 'Oct 21, 2024' },
-    { id: 'FINE-8601', homeowner: 'Vikram Rao', violations: 6, ward: 'Sector 2', amount: 1000, status: 'PENDING', date: 'Oct 20, 2024' },
-  ]);
+  const headers = { Authorization: `Bearer ${token}` };
+
+  const fetchFines = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API}/api/municipal/fines`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        setAllFines(data);
+      }
+    } catch (err) {
+      console.error('Fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, API]);
+
+  useEffect(() => {
+    fetchFines();
+  }, [fetchFines]);
 
   // Dynamically calculate analytics based on state
   const analytics = useMemo(() => {
-    const pending = fines.filter(f => f.status === 'PENDING').reduce((acc, curr) => acc + curr.amount, 0);
-    const collected = fines.filter(f => f.status === 'COLLECTED').reduce((acc, curr) => acc + curr.amount, 0);
-    const totalViolations = fines.length;
-    const collectedCount = fines.filter(f => f.status === 'COLLECTED').length;
-    const complianceRate = Math.round((collectedCount / totalViolations) * 100);
+    const pending = allFines.filter(f => f.status === 'pending').reduce((acc, curr) => acc + (curr.amount || 0), 0);
+    const collected = allFines.filter(f => f.status === 'paid').reduce((acc, curr) => acc + (curr.amount || 0), 0);
+    const totalViolations = allFines.length;
+    const collectedCount = allFines.filter(f => f.status === 'paid').length;
+    const complianceRate = totalViolations > 0 ? Math.round((collectedCount / totalViolations) * 100) : 0;
 
     return { pending, collected, complianceRate };
-  }, [fines]);
+  }, [allFines]);
 
-  const handleCollect = (id: string) => {
-    setFines(prev => prev.map(f => f.id === id ? { ...f, status: 'COLLECTED' } : f));
-  };
+  const filteredFines = useMemo(() => {
+    if (activeFilter === 'ALL') return allFines;
+    return allFines.filter(f => f.status.toUpperCase() === activeFilter.toUpperCase());
+  }, [allFines, activeFilter]);
 
-  const filteredFines = activeFilter === 'ALL' 
-    ? fines 
-    : fines.filter(f => f.status === activeFilter);
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-12 h-12 text-brand-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-10 pb-20">
@@ -100,40 +126,45 @@ export default function FinesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F0EDE7]">
-              {filteredFines.map((fine) => (
-                <tr key={fine.id} className="group hover:bg-[#F9F7F2] transition-colors">
-                  <td className="px-10 py-8 font-bold text-xs text-gray-400">{fine.id}</td>
-                  <td className="px-8 py-8">
-                     <p className="font-black text-sm text-[#2D2D2D]">{fine.homeowner}</p>
-                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{fine.ward}</p>
-                  </td>
-                  <td className="px-8 py-8">
-                     <div className="flex gap-1">
-                        {[...Array(fine.violations)].map((_, i) => (
-                           <div key={i} className="w-2.5 h-2.5 bg-red-600 shadow-sm" />
-                        ))}
-                     </div>
-                  </td>
-                  <td className="px-8 py-8 font-black text-brand-primary text-lg">₹{fine.amount}</td>
-                  <td className="px-8 py-8">
-                     <span className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest border ${fine.status === 'COLLECTED' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
-                        {fine.status}
-                     </span>
-                  </td>
-                  <td className="px-10 py-8 text-right">
-                     {fine.status === 'PENDING' ? (
-                        <button onClick={() => handleCollect(fine.id)} className="bg-brand-primary text-white px-6 py-2.5 text-[10px] font-black uppercase tracking-widest hover:bg-[#3d5a4a] transition-all">
-                           Mark Collected
-                        </button>
-                     ) : (
-                        <div className="flex items-center justify-end gap-2 text-green-600">
-                           <CheckCircle2 className="w-4 h-4" />
-                           <span className="text-[10px] font-black uppercase tracking-widest">Settled</span>
-                        </div>
-                     )}
-                  </td>
-                </tr>
-              ))}
+              {filteredFines.map((fine: any) => {
+                const violationsCount = Math.max(0, Math.floor((fine.amount - 100) / 20 + 3));
+                
+                return (
+                  <tr key={fine._id} className="group hover:bg-[#F9F7F2] transition-colors">
+                    <td className="px-10 py-8 font-bold text-xs text-gray-400">#{fine._id.slice(-6).toUpperCase()}</td>
+                    <td className="px-8 py-8">
+                       <p className="font-black text-sm text-[#2D2D2D]">{fine.userName}</p>
+                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{fine.houseId}</p>
+                    </td>
+                    <td className="px-8 py-8">
+                       <div className="flex gap-1 flex-wrap max-w-[120px]">
+                          {[...Array(violationsCount)].map((_, i) => (
+                             <div key={i} className="w-2.5 h-2.5 bg-red-600 shadow-sm" />
+                          ))}
+                       </div>
+                    </td>
+                    <td className="px-8 py-8 font-black text-brand-primary text-lg">₹{fine.amount}</td>
+                    <td className="px-8 py-8">
+                       <span className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest border ${fine.status === 'paid' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
+                          {fine.status}
+                       </span>
+                    </td>
+                    <td className="px-10 py-8 text-right">
+                       {fine.status === 'paid' ? (
+                          <div className="flex items-center justify-end gap-2 text-green-600">
+                             <CheckCircle2 className="w-4 h-4" />
+                             <span className="text-[10px] font-black uppercase tracking-widest">Settled</span>
+                          </div>
+                       ) : (
+                          <div className="flex items-center justify-end gap-2 text-red-600/40">
+                             <Wallet className="w-4 h-4" />
+                             <span className="text-[10px] font-black uppercase tracking-widest">Payment Pending</span>
+                          </div>
+                       )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

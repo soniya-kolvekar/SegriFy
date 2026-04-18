@@ -7,7 +7,7 @@ const materialRequestSchema = new mongoose.Schema({
   estimatedAmount: { type: Number, required: true },
   status: { 
     type: String, 
-    enum: ['Pending', 'Accepted', 'Rejected'], 
+    enum: ['Pending', 'Accepted', 'Rejected', 'Paid'], 
     default: 'Pending' 
   },
   pickupDate: { type: Date },

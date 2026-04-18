@@ -48,52 +48,77 @@ export default function RewardsPage() {
     <div className="p-8 space-y-8 max-w-[1400px] mx-auto">
       {/* Header Section */}
       <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-black text-[#2D3128]">Rewards & Achievements</h1>
-        <p className="text-[#7A7D74] font-medium text-lg">Earn monetary incentives for every proper waste segregation</p>
+        <h1 className="text-4xl font-black text-[#2D3128]">Economic Outlook</h1>
+        <p className="text-[#7A7D74] font-medium text-lg">Monthly performance summary based on segregation habits</p>
       </div>
 
       <div className="grid grid-cols-1 gap-8">
         {/* Eligibility Status */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-8 mb-4">
+          {/* Eligibility Card */}
           <div className={cn(
-            "rounded-none p-10 border transition-all h-fit text-center space-y-6",
+            "rounded-none p-10 border transition-all text-center space-y-6 flex flex-col items-center justify-center",
             rewardData?.rewardsEligible ? "bg-white border-[#E5E2D9]" : "bg-red-50 border-red-100"
           )}>
-            <p className="text-[10px] font-black text-[#7A7D74] uppercase tracking-[0.2em]">Monthly Eligibility</p>
+            <p className="text-[10px] font-black text-[#7A7D74] uppercase tracking-[0.2em]">Current Status</p>
             <div className={cn(
-              "w-24 h-24 rounded-none mx-auto flex items-center justify-center shadow-lg",
+              "w-20 h-20 rounded-none flex items-center justify-center shadow-lg",
               rewardData?.rewardsEligible ? "bg-[#4D5443] shadow-[#4D5443]/20" : "bg-red-500 shadow-red-500/20"
             )}>
               {rewardData?.rewardsEligible 
-                ? <CheckCircle2 className="w-12 h-12 text-white" /> 
-                : <XCircle className="w-12 h-12 text-white" />
+                ? <CheckCircle2 className="w-10 h-10 text-white" /> 
+                : <XCircle className="w-10 h-10 text-white" />
               }
             </div>
             
             <div>
-              <h3 className="text-2xl font-black text-[#2D3128]">
-                {rewardData?.rewardsEligible ? 'Eligible for Rewards' : 'Rewards Blocked'}
+              <h3 className="text-xl font-black text-[#2D3128]">
+                {rewardData?.rewardsEligible ? 'Incentive Eligible' : 'Fine Applicable'}
               </h3>
-              <p className="text-sm text-[#7A7D74] font-medium mt-2">
-                {rewardData?.improperCount ?? 0} / 3 improper marks allowed per month
+              <p className="text-xs text-[#7A7D74] font-medium mt-2">
+                {rewardData?.improperCount ?? 0} / 3 Improper Marks
               </p>
             </div>
 
             {!rewardData?.rewardsEligible && (
-              <div className="bg-white/60 p-5 rounded-none border border-red-100 flex items-start gap-3 text-left">
-                <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                <p className="text-xs font-bold text-red-700 uppercase leading-relaxed tracking-tight">
-                  You have exceeded the monthly limit of improper marks. Financial rewards will not be awarded for the rest of this month.
+              <div className="bg-white/60 p-4 rounded-none border border-red-100 flex items-start gap-3 text-left">
+                <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                <p className="text-[10px] font-bold text-red-700 uppercase leading-relaxed tracking-tight">
+                  Threshold exceeded. Incremental fines now apply until the end of the month.
                 </p>
               </div>
             )}
 
             <button 
               onClick={() => setShowLearnMore(true)}
-              className="w-full bg-[#F5F4F0] py-4 rounded-none font-black text-xs uppercase tracking-widest text-[#4D5443] hover:bg-[#EBE9E0] transition-colors flex items-center justify-center gap-2"
+              className="mt-4 bg-[#F5F4F0] px-6 py-3 rounded-none font-black text-[9px] uppercase tracking-widest text-[#4D5443] hover:bg-[#EBE9E0] transition-colors flex items-center gap-2"
             >
               Learn about rewards <ChevronRight className="w-4 h-4" />
             </button>
+          </div>
+
+          {/* Projection Card */}
+          <div className="rounded-none bg-[#EBE9E0] p-10 border border-[#D9D7CE] text-center space-y-6 flex flex-col items-center justify-center">
+             <p className="text-[10px] font-black text-[#7A7D74] uppercase tracking-[0.2em]">Projected Monthly Outcome</p>
+             <div className="flex flex-col items-center">
+                <span className={cn(
+                   "text-6xl font-black tracking-tighter",
+                   rewardData?.outcomeType === 'reward' ? "text-[#4D5443]" : "text-red-600"
+                )}>
+                   {rewardData?.outcomeType === 'reward' ? '+' : '-'}₹{rewardData?.predictedAmount ?? 0}
+                </span>
+                <p className={cn(
+                  "text-[10px] font-black uppercase tracking-widest mt-4 px-4 py-1.5",
+                  rewardData?.outcomeType === 'reward' ? "bg-[#4D5443] text-white" : "bg-red-600 text-white"
+                )}>
+                  {rewardData?.outcomeType === 'reward' ? 'Projected Reward' : 'Projected Fine'}
+                </p>
+             </div>
+             <p className="text-[10px] font-bold text-[#7A7D74] uppercase max-w-[200px]">
+                {rewardData?.outcomeType === 'reward' 
+                  ? 'Maintain < 3 improper marks to receive this reward.' 
+                  : 'Fines increase by ₹20 for each additional improper mark.'}
+             </p>
           </div>
         </div>
 
@@ -109,9 +134,8 @@ export default function RewardsPage() {
                 <thead className="bg-[#F5F4F0]/50">
                   <tr>
                     <th className="px-6 py-4 text-[10px] font-black text-[#7A7D74] uppercase tracking-widest">Date</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-[#7A7D74] uppercase tracking-widest">Type</th>
                     <th className="px-6 py-4 text-[10px] font-black text-[#7A7D74] uppercase tracking-widest text-center">Status</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-[#7A7D74] uppercase tracking-widest text-right">Amount Earned</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-[#7A7D74] uppercase tracking-widest text-right">Amount</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F5F4F0]">
@@ -121,7 +145,6 @@ export default function RewardsPage() {
                         <p className="text-sm font-bold text-[#2D3128]">{format(new Date(tx.date), 'dd MMM yyyy')}</p>
                         <p className="text-[10px] text-[#7A7D74] font-medium">{format(new Date(tx.date), 'hh:mm a')}</p>
                       </td>
-                      <td className="px-6 py-5 text-sm font-black text-[#4D5443] capitalize">{tx.wasteType}</td>
                       <td className="px-6 py-5 text-center">
                         <span className={cn(
                           "px-4 py-1.5 rounded-none text-[10px] font-black uppercase tracking-widest border",
@@ -132,11 +155,8 @@ export default function RewardsPage() {
                           {tx.status}
                         </span>
                       </td>
-                      <td className={cn(
-                        "px-6 py-5 text-right font-black text-lg",
-                        tx.status === 'proper' ? "text-[#4D5443]" : "text-[#7A7D74]/30"
-                      )}>
-                        {tx.status === 'proper' ? '₹50.00' : '₹0.00'}
+                      <td className="px-6 py-5 text-right font-black text-lg text-[#7A7D74]/30">
+                        ₹0.00
                       </td>
                     </tr>
                   ))}
@@ -181,17 +201,17 @@ export default function RewardsPage() {
               
               <div className="space-y-6 text-[#4D5443]">
                 <div>
-                  <h4 className="text-sm font-black text-[#7A7D74] uppercase tracking-widest mb-1">How It Works</h4>
+                  <h4 className="text-sm font-black text-[#7A7D74] uppercase tracking-widest mb-1">Monthly Reward</h4>
                   <p className="text-base font-medium leading-relaxed">
-                    Whenever you hand over your segregated waste to the municipal collector, they will scan your unique Homeowner QR code. 
-                    If your segregation is approved, monetary rewards are disbursed directly to your ledger!
+                    Maintain consistency! If you receive <strong className="text-green-600 font-black">less than 3 improper marks</strong> in a month, you will receive a monthly incentive of <strong className="font-black text-[#2D3128]">₹30.00</strong>.
                   </p>
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-[#7A7D74] uppercase tracking-widest mb-1">The 3-Strike Rule</h4>
+                  <h4 className="text-sm font-black text-[#7A7D74] uppercase tracking-widest mb-1">Incremental Fines</h4>
                   <p className="text-base font-medium leading-relaxed">
-                    If your waste is improperly segregated, the collector will mark it as such. 
-                    Receiving <strong className="text-red-500 font-black">3 improper marks</strong> in a single month will temporarily suspend your rewards capability until the first day of the next month.
+                    Failing to segregate waste impacts the environment. 
+                    Receiving <strong className="text-red-500 font-black">3 improper marks</strong> triggers a base fine of <strong className="font-black text-red-600">₹100</strong>. 
+                    Each additional improper mark beyond the third strike increases the fine by <strong className="font-black text-red-600">₹20</strong>.
                   </p>
                 </div>
 

@@ -1,91 +1,111 @@
 'use client';
 
-import React, { useState } from 'react';
-import { MessageSquare, Filter, Download, X, MoreVertical, User, MapPin, Clock, AlertTriangle, ShieldAlert } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { MessageSquare, Filter, Download, X, MoreVertical, User, MapPin, Clock, AlertTriangle, ShieldAlert, Loader2, CheckCircle2 } from 'lucide-react';
+import { useAuthStore } from '@/context/useAuthStore';
+import { format, differenceInDays } from 'date-fns';
+
+const cn = (...c: any[]) => c.filter(Boolean).join(' ');
 
 export default function ComplaintsPage() {
+  const envApi = process.env.NEXT_PUBLIC_API_URL;
+  const API = (envApi && envApi !== '/') ? envApi : 'http://localhost:5000';
+  const { firebaseToken: token } = useAuthStore();
+  
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilter, setActiveFilter] = useState('ALL');
+  const [allComplaints, setAllComplaints] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data with "Days Open" to demonstrate the 3-day SLA logic
-  const complaints = [
-    { 
-      id: 'CMP-1021', 
-      homeowner: 'Rajesh Kumar', 
-      category: 'Missed Collection', 
-      location: 'Ward 12, Green Avenue', 
-      date: 'Oct 24, 2024', 
-      daysOpen: 0,
-      status: 'NEW',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50'
-    },
-    { 
-      id: 'CMP-1018', 
-      homeowner: 'Priya Singh', 
-      category: 'Overflowing Bin', 
-      location: 'Sector 4, Main Road', 
-      date: 'Oct 23, 2024', 
-      daysOpen: 1,
-      status: 'IN PROGRESS',
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50'
-    },
-    { 
-      id: 'CMP-1015', 
-      homeowner: 'Amit Verma', 
-      category: 'Illegal Dumping', 
-      location: 'Ward 9, South Gate', 
-      date: 'Oct 21, 2024', 
-      daysOpen: 3,
-      status: 'ESCALATED',
-      color: 'text-red-600',
-      bgColor: 'bg-red-50'
-    },
-    { 
-      id: 'CMP-1012', 
-      homeowner: 'Sunita Devi', 
-      category: 'Bin Repair', 
-      location: 'Ward 15, East Park', 
-      date: 'Oct 21, 2024', 
-      daysOpen: 3,
-      status: 'PENDING',
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50'
-    },
-    { 
-      id: 'CMP-1009', 
-      homeowner: 'Vikram Rao', 
-      category: 'Smell Complaint', 
-      location: 'Sector 2, North Plaza', 
-      date: 'Oct 19, 2024', 
-      daysOpen: 5,
-      status: 'ESCALATED',
-      color: 'text-red-600',
-      bgColor: 'bg-red-50'
-    },
-  ];
+  const headers = { Authorization: `Bearer ${token}` };
 
-  const filterOptions = ['ALL', 'NEW', 'IN PROGRESS', 'PENDING', 'ESCALATED', 'RESOLVED'];
+  const fetchComplaints = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API}/api/municipal/complaints`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        setAllComplaints(data);
+      }
+    } catch (err) {
+      console.error('Fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, API]);
 
-  const filteredComplaints = activeFilter === 'ALL' 
-    ? complaints 
-    : complaints.filter(c => c.status === activeFilter);
+  useEffect(() => {
+    fetchComplaints();
+  }, [fetchComplaints]);
+
+  const complaintsWithSLA = useMemo(() => {
+    return allComplaints.map((c: any) => {
+      const daysOpen = differenceInDays(new Date(), new Date(c.createdAt));
+      return {
+        ...c,
+        daysOpen,
+        isOverdue: daysOpen >= 3 && c.status !== 'resolved'
+      };
+    });
+  }, [allComplaints]);
+
+  const analytics = useMemo(() => {
+    const overdue = complaintsWithSLA.filter((c: any) => c.isOverdue).length;
+    const expiringToday = complaintsWithSLA.filter((c: any) => c.daysOpen === 2 && c.status !== 'resolved').length;
+    const under24h = complaintsWithSLA.filter((c: any) => c.daysOpen === 0).length;
+
+    return { overdue, expiringToday, under24h };
+  }, [complaintsWithSLA]);
+
+  const handleUpdateStatus = async (id: string, status: string) => {
+    try {
+      const res = await fetch(`${API}/api/municipal/complaints/${id}`, {
+        method: 'PATCH',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      if (res.ok) fetchComplaints();
+    } catch (err) {
+      console.error('Update error:', err);
+    }
+  };
+
+  const filterOptions = ['ALL', 'PENDING', 'IN_PROGRESS', 'RESOLVED', 'OVERDUE'];
+
+  const filteredComplaints = useMemo(() => {
+    if (activeFilter === 'ALL') return complaintsWithSLA;
+    if (activeFilter === 'OVERDUE') return complaintsWithSLA.filter((c: any) => c.isOverdue);
+    return complaintsWithSLA.filter((c: any) => c.status.toUpperCase() === activeFilter);
+  }, [complaintsWithSLA, activeFilter]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-12 h-12 text-brand-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-10 pb-20">
       {/* SLA Alert Banner */}
-      <div className="bg-red-600 p-6 flex items-center justify-between shadow-lg shadow-red-600/10">
+      <div className={cn("p-6 flex items-center justify-between shadow-lg", analytics.overdue > 0 ? "bg-red-600 shadow-red-600/10" : "bg-brand-primary shadow-brand-primary/10")}>
         <div className="flex items-center gap-4 text-white">
           <ShieldAlert className="w-8 h-8" />
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">SLA Violation Warning</p>
-            <h4 className="text-lg font-black tracking-tight">2 Complaints have exceeded the 3-day resolution limit.</h4>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">SLA Monitoring System</p>
+            <h4 className="text-lg font-black tracking-tight">
+              {analytics.overdue > 0 
+                ? `${analytics.overdue} Complaints have exceeded the 3-day resolution limit.` 
+                : "All complaints are within the 72-hour resolution window."}
+            </h4>
           </div>
         </div>
-        <div className="bg-white/10 px-6 py-2 border border-white/20 text-white text-[10px] font-black uppercase tracking-widest">
-           Status: Escalated to Higher Authority
-        </div>
+        {analytics.overdue > 0 && (
+          <div className="bg-white/10 px-6 py-2 border border-white/20 text-white text-[10px] font-black uppercase tracking-widest">
+            Status: Escalated to Higher Authority
+          </div>
+        )}
       </div>
 
       <div className="bg-white border border-[#E5E1D8] shadow-sm overflow-hidden flex flex-col">
@@ -146,46 +166,83 @@ export default function ComplaintsPage() {
             </thead>
             <tbody className="divide-y divide-[#F0EDE7]">
               {filteredComplaints.length > 0 ? (
-                filteredComplaints.map((c) => (
-                  <tr key={c.id} className={`group transition-colors ${c.daysOpen >= 3 ? 'bg-red-50/30' : 'hover:bg-[#F9F7F2]'}`}>
-                    <td className="px-10 py-8 font-bold text-xs text-gray-400 group-hover:text-brand-primary transition-colors">{c.id}</td>
-                    <td className="px-8 py-8">
-                       <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-white border border-gray-100 flex items-center justify-center text-gray-400">
-                             <User className="w-4 h-4" />
-                          </div>
-                          <span className="font-bold text-sm text-[#2D2D2D]">{c.homeowner}</span>
-                       </div>
-                    </td>
-                    <td className="px-8 py-8">
-                       <span className="text-sm font-bold text-brand-primary">{c.category}</span>
-                       <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">Reported: {c.date}</p>
-                    </td>
-                    <td className="px-8 py-8">
-                       {c.daysOpen >= 3 ? (
-                         <div className="flex items-center gap-2 text-red-600">
-                            <AlertTriangle className="w-4 h-4" />
-                            <span className="text-xs font-black uppercase tracking-widest">EXCEEDED ( {c.daysOpen} Days )</span>
+                filteredComplaints.map((c: any) => {
+                  const statusColors: any = {
+                    pending: 'bg-blue-50 text-blue-600',
+                    in_progress: 'bg-orange-50 text-orange-600',
+                    resolved: 'bg-green-50 text-green-600'
+                  };
+
+                  return (
+                    <tr key={c._id} className={`group transition-colors ${c.isOverdue ? 'bg-red-50/30' : 'hover:bg-[#F9F7F2]'}`}>
+                      <td className="px-10 py-8 font-bold text-xs text-gray-400 group-hover:text-brand-primary transition-colors">#{c._id.slice(-6).toUpperCase()}</td>
+                      <td className="px-8 py-8">
+                         <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-white border border-gray-100 flex items-center justify-center text-gray-400">
+                               <User className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-sm text-[#2D2D2D]">{c.userName}</p>
+                              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{c.houseId}</p>
+                            </div>
                          </div>
-                       ) : (
-                         <div className="flex items-center gap-2 text-gray-400">
-                            <Clock className="w-4 h-4" />
-                            <span className="text-xs font-bold uppercase tracking-widest">{3 - c.daysOpen} Days Remaining</span>
-                         </div>
-                       )}
-                    </td>
-                    <td className="px-8 py-8">
-                       <span className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest border ${c.bgColor} ${c.color} border-current/10`}>
-                          {c.status}
-                       </span>
-                    </td>
-                    <td className="px-10 py-8 text-right">
-                       <button className="text-[10px] font-black text-brand-primary uppercase tracking-widest hover:underline decoration-2 underline-offset-4">
-                          Escalate Now
-                       </button>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="px-8 py-8">
+                         <span className="text-sm font-bold text-brand-primary">{c.subject}</span>
+                         <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">Reported: {format(new Date(c.createdAt), 'MMM dd, yyyy')}</p>
+                      </td>
+                      <td className="px-8 py-8">
+                         {c.isOverdue ? (
+                           <div className="flex items-center gap-2 text-red-600">
+                              <AlertTriangle className="w-4 h-4" />
+                              <span className="text-xs font-black uppercase tracking-widest">EXCEEDED ( {c.daysOpen} Days )</span>
+                           </div>
+                         ) : c.status === 'resolved' ? (
+                           <div className="flex items-center gap-2 text-green-600">
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span className="text-xs font-bold uppercase tracking-widest text-[#4D5443]">RESOLVED</span>
+                           </div>
+                         ) : (
+                           <div className="flex items-center gap-2 text-gray-400">
+                              <Clock className="w-4 h-4" />
+                              <span className="text-xs font-bold uppercase tracking-widest">{Math.max(0, 3 - c.daysOpen)} Days Remaining</span>
+                           </div>
+                         )}
+                      </td>
+                      <td className="px-8 py-8">
+                         <span className={cn(
+                           "px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-current/10",
+                           statusColors[c.status] || 'bg-gray-50 text-gray-400'
+                         )}>
+                            {c.status.replace('_', ' ')}
+                         </span>
+                      </td>
+                      <td className="px-10 py-8 text-right space-x-4">
+                        {c.status !== 'resolved' && (
+                          <button 
+                            onClick={() => handleUpdateStatus(c._id, 'resolved')}
+                            className="text-[10px] font-black text-green-600 uppercase tracking-widest hover:underline decoration-2 underline-offset-4"
+                          >
+                            Resolve
+                          </button>
+                        )}
+                        {c.status === 'pending' && (
+                          <button 
+                             onClick={() => handleUpdateStatus(c._id, 'in_progress')}
+                             className="text-[10px] font-black text-brand-primary uppercase tracking-widest hover:underline decoration-2 underline-offset-4"
+                          >
+                            Start Work
+                          </button>
+                        )}
+                        {c.isOverdue && (
+                          <button className="text-[10px] font-black text-red-600 uppercase tracking-widest hover:underline decoration-2 underline-offset-4">
+                            Escalate
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td colSpan={6} className="px-10 py-20 text-center">
@@ -201,19 +258,19 @@ export default function ComplaintsPage() {
       <div className="grid grid-cols-4 gap-8">
         <div className="bg-white p-8 border border-[#E5E1D8] flex flex-col shadow-sm">
            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Under 24h</p>
-           <p className="text-3xl font-black text-brand-primary tracking-tighter">04</p>
+           <p className="text-3xl font-black text-brand-primary tracking-tighter">{analytics.under24h.toString().padStart(2, '0')}</p>
         </div>
         <div className="bg-white p-8 border border-[#E5E1D8] flex flex-col shadow-sm border-l-4 border-l-orange-500">
            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Expiring Today</p>
-           <p className="text-3xl font-black text-orange-500 tracking-tighter">01</p>
+           <p className="text-3xl font-black text-orange-500 tracking-tighter">{analytics.expiringToday.toString().padStart(2, '0')}</p>
         </div>
         <div className="bg-white p-8 border border-[#E5E1D8] flex flex-col shadow-sm border-l-4 border-l-red-600">
            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Overdue (3+ Days)</p>
-           <p className="text-3xl font-black text-red-600 tracking-tighter">02</p>
+           <p className="text-3xl font-black text-red-600 tracking-tighter">{analytics.overdue.toString().padStart(2, '0')}</p>
         </div>
         <div className="bg-white p-8 border border-[#E5E1D8] flex flex-col shadow-sm">
-           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Authority Notified</p>
-           <p className="text-3xl font-black text-gray-400 tracking-tighter">02</p>
+           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Total Active</p>
+           <p className="text-3xl font-black text-gray-400 tracking-tighter">{(allComplaints.filter((c: any) => c.status !== 'resolved').length).toString().padStart(2, '0')}</p>
         </div>
       </div>
     </div>

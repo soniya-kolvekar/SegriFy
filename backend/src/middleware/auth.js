@@ -48,18 +48,29 @@ const verifyFirebaseToken = async (req, res, next) => {
 
   try {
     const decodedToken = await admin.auth().verifyIdToken(token);
+    
     // Find MongoDB user associated with this Firebase UID
     const user = await User.findOne({ firebaseUid: decodedToken.uid });
     
+    if (!user && process.env.NODE_ENV === 'production') {
+      return res.status(401).json({ message: 'Unauthorized: User not found in database' });
+    }
+
     req.user = {
       firebaseUid: decodedToken.uid,
       email: decodedToken.email,
       admin: decodedToken.admin || false,
-      ... (user ? { id: user._id, role: user.role, mongoUser: user } : { role: 'municipal' }) // Fallback role for dev
+      role: user ? user.role : 'municipal', // Default to municipal for admin accounts or dev
+      mongoUser: user
     };
     
     next();
   } catch (error) {
+    if (error.code === 'auth/id-token-expired') {
+      console.warn('🎫 Firebase Auth: Token expired');
+      return res.status(401).json({ message: 'Unauthorized: Token expired', code: 'TOKEN_EXPIRED' });
+    }
+
     // DEVELOPMENT BYPASS: Allow access if we're in dev and no service account is configured
     if (!serviceAccount && process.env.NODE_ENV !== 'production') {
       console.warn("🚧 DEV MODE: Bypassing Firebase Auth because service account is missing.");
@@ -73,7 +84,7 @@ const verifyFirebaseToken = async (req, res, next) => {
     }
     
     console.error('Firebase Auth Error:', error.message);
-    return res.status(401).json({ message: 'Unauthorized: Invalid token or Service Account missing' });
+    return res.status(401).json({ message: 'Unauthorized: Invalid token' });
   }
 };
 
@@ -101,8 +112,8 @@ const verifyMunicipal = (req, res, next) => {
 };
 
 const verifyWorker = (req, res, next) => {
-  // Workers could either have an admin claim or a worker role
-  if (req.user.admin !== true && req.user.role !== 'worker') {
+  // Workers, Municipal Admins, or accounts with global Admin claims are allowed
+  if (req.user.admin !== true && req.user.role !== 'worker' && req.user.role !== 'municipal') {
     return res.status(403).json({ message: 'Forbidden: Missing Worker Verification' });
   }
 

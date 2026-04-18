@@ -42,6 +42,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const homeownerRoutes = require('./routes/homeowner');
 const businessRoutes = require('./routes/business');
 const paymentRoutes = require('./routes/payment');
+const municipalRoutes = require('./routes/municipal');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/segregation', segregationRoutes);
@@ -49,6 +50,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/homeowner', homeownerRoutes);
 app.use('/api/business', businessRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/municipal', municipalRoutes);
 
 // Routes Placeholder
 app.get('/', (req, res) => {

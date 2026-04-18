@@ -17,6 +17,20 @@ router.post('/setup', verifyFirebaseToken, async (req, res) => {
     const { name, houseId, shopId, maskedAadhaar } = req.body;
     const finalId = houseId || shopId;
 
+    // Check for global uniqueness of the identification number
+    const existing = await User.findOne({ 
+      $or: [
+        { houseId: finalId },
+        { shopId: finalId }
+      ]
+    });
+
+    if (existing && existing.firebaseUid !== user.firebaseUid) {
+      return res.status(400).json({ 
+        message: `The ID '${finalId}' is already registered to another resident/business.` 
+      });
+    }
+
     if (!name || !finalId) {
       return res.status(400).json({ message: 'Name and identification number are required.' });
     }
@@ -106,21 +120,34 @@ router.get('/rewards', verifyFirebaseToken, async (req, res) => {
       date: { $gte: monthStart, $lt: monthEnd }
     });
 
-    const rewardsEligible = improperCount < 3; // 3-strike rule
+    const rewardsEligible = improperCount < 3;
+
+    // Calculate Predicted Outcome (Monthly Aggregate)
+    // Reward: ₹30 if Count < 3
+    // Fine: ₹100 for 3rd strike, then ₹20 per subsequent strike
+    let predictedAmount = 30; // Base Reward
+    let outcomeType = 'reward';
+
+    if (improperCount >= 3) {
+      outcomeType = 'fine';
+      predictedAmount = 100 + (improperCount - 3) * 20;
+    }
 
     // Get all reward transactions
     const rewards = await Reward.find({ userId: user._id }).sort({ date: -1 });
 
-    // Get all segregation records as transaction history
+    // Get all segregation records as transaction history (WITHOUT wasteType)
     const segregationHistory = await SegregationRecord.find({ userId: user._id })
       .sort({ date: -1 })
       .limit(20)
-      .select('date status wasteType');
+      .select('date status');
 
     res.json({
       totalPoints: user.points,
       improperCount,
       rewardsEligible,
+      predictedAmount,
+      outcomeType,
       rewards,
       segregationHistory
     });

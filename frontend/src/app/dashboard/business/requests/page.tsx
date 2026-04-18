@@ -5,9 +5,13 @@ import { Leaf, Package, Weight, IndianRupee, Send, Info, Plus, FileText } from '
 import { useAuthStore } from '@/context/useAuthStore';
 import { useRouter } from 'next/navigation';
 
+const cn = (...classes: any[]) => classes.filter(Boolean).join(' ');
+
 interface Material {
+  _id: string;
   name: string;
-  costPerKg: number;
+  costPerTon: number;
+  availableQuantity: number;
   description: string;
 }
 
@@ -23,10 +27,18 @@ export default function MaterialRequestPage() {
   const { firebaseToken } = useAuthStore();
   const router = useRouter();
 
+  const envApi = process.env.NEXT_PUBLIC_API_URL;
+  const API = (envApi && envApi !== '/') ? envApi : 'http://localhost:5000';
+
   useEffect(() => {
     const fetchMaterials = async () => {
+      if (!firebaseToken) {
+        setFetching(false);
+        return;
+      }
+
       try {
-        const res = await fetch('http://localhost:5000/api/business/materials', {
+        const res = await fetch(`${API}/api/business/materials`, {
           headers: { 'Authorization': `Bearer ${firebaseToken}` }
         });
         const data = await res.json();
@@ -43,10 +55,10 @@ export default function MaterialRequestPage() {
   }, [firebaseToken]);
 
   const currentMaterial = materials.find(m => m.name === selectedMaterial);
-  // Estimate based on cost per Kg. Adding a fallback to 0. (Usually cost is per kg, if they mean per ton, we'd divide by 1000. But user wants unit changed to kg, so the DB `costPerTon` logically represents `cost for that amount unit`. We'll fetch the property they have, assuming the municipal will enter prices correctly).
-  // Wait, the DB had `costPerTon`, so changing type to `costPerKg` might break DB fetching if the DB schema isn't changed.
-  // Actually, Municipal schema doesn't exist explicitly here, but let's read `m.costPerTon` or `m.costPerKg`.
-  const estimatedAmount = currentMaterial ? (currentMaterial.costPerKg || (currentMaterial as any).costPerTon || 0) * quantity : 0;
+  // Using costPerTon as provided by the inventory API
+  const estimatedAmount = currentMaterial ? (currentMaterial.costPerTon || 0) * quantity : 0;
+  const isOutOfStock = currentMaterial ? currentMaterial.availableQuantity <= 0 : false;
+  const exceedsStock = currentMaterial ? quantity > currentMaterial.availableQuantity : false;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,9 +71,14 @@ export default function MaterialRequestPage() {
       return;
     }
 
+    if (exceedsStock) {
+      setMessage({ type: 'error', text: `Quantity exceeds available stock (${currentMaterial?.availableQuantity}kg).` });
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/business/request', {
+      const res = await fetch(`${API}/api/business/request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,7 +95,8 @@ export default function MaterialRequestPage() {
         setMessage({ type: 'success', text: 'Request submitted successfully!' });
         setTimeout(() => router.push('/dashboard/business'), 2000);
       } else {
-        setMessage({ type: 'error', text: 'Failed to submit request.' });
+        const errorData = await res.json();
+        setMessage({ type: 'error', text: errorData.message || 'Failed to submit request.' });
       }
     } catch (err) {
       setMessage({ type: 'error', text: 'An error occurred.' });
@@ -116,8 +134,18 @@ export default function MaterialRequestPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest ml-1">Waste Type</label>
+            <div className="space-y-4">
+              <div className="flex justify-between items-end px-1">
+                <label className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest">Waste Type</label>
+                {currentMaterial && (
+                  <span className={cn(
+                    "text-[9px] font-black uppercase tracking-wider px-2 py-1 border",
+                    currentMaterial.availableQuantity < 100 ? "text-red-500 border-red-100 bg-red-50" : "text-green-600 border-green-100 bg-green-50"
+                  )}>
+                    Stock: {currentMaterial.availableQuantity} kg Available
+                  </span>
+                )}
+              </div>
               <select 
                 value={selectedMaterial}
                 onChange={(e) => setSelectedMaterial(e.target.value)}
@@ -140,14 +168,23 @@ export default function MaterialRequestPage() {
                     type="number"
                     step="0.1"
                     min="0"
+                    max={currentMaterial?.availableQuantity}
                     value={quantity}
                     onChange={(e) => setQuantity(Number(e.target.value))}
-                    disabled={materials.length === 0}
-                    className="w-full bg-brand-bg py-4 px-5 rounded-none border border-brand-muted text-sm font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary transition-all pr-24 disabled:opacity-50"
+                    disabled={materials.length === 0 || isOutOfStock}
+                    className={cn(
+                      "w-full bg-brand-bg py-4 px-5 rounded-none border text-sm font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary transition-all pr-24 disabled:opacity-50",
+                      exceedsStock ? "border-red-500 ring-1 ring-red-500" : "border-brand-muted"
+                    )}
                     placeholder="0"
                   />
                   <span className="absolute right-10 top-1/2 -translate-y-1/2 text-[10px] font-black text-brand-primary/40 uppercase">kg</span>
                 </div>
+                {exceedsStock && (
+                  <p className="text-[9px] font-black text-red-500 uppercase tracking-widest mt-2 ml-1 animate-pulse">
+                    Error: Request exceeds current stock limit
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -171,10 +208,10 @@ export default function MaterialRequestPage() {
 
             <button 
               type="submit"
-              disabled={loading || fetching || materials.length === 0}
-              className="w-full bg-brand-primary py-5 rounded-none text-white font-black text-sm uppercase tracking-widest hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || fetching || materials.length === 0 || exceedsStock || isOutOfStock}
+              className="w-full bg-brand-primary py-5 rounded-none text-white font-black text-sm uppercase tracking-widest hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-brand-primary/20"
             >
-              {loading ? 'Processing...' : 'Submit Request'}
+              {loading ? 'Processing...' : isOutOfStock ? 'OUT OF STOCK' : exceedsStock ? 'INSUFFICIENT STOCK' : 'Submit Request'}
             </button>
           </form>
         </div>

@@ -38,9 +38,23 @@ export default function SetupPage() {
       router.push('/signup');
       return;
     }
-    // If user already has houseId or shopId, they've completed setup — go to dashboard
-    if (user?.houseId || user?.shopId) {
-      router.push(user.role === 'business' ? '/dashboard/business' : '/dashboard');
+
+    if (user?.role === 'municipal') {
+      router.replace('/municipal');
+      return;
+    }
+
+    if (user?.role === 'worker') {
+      router.replace('/worker');
+      return;
+    }
+
+    // Secure Redirect: If user already has a verified identity, skip setup
+    const role = user?.role;
+    const isProfileComplete = !!(user?.houseId || user?.shopId);
+
+    if (isProfileComplete) {
+      router.push(role === 'business' ? '/dashboard/business' : '/dashboard');
     }
   }, [user, firebaseToken, router]);
 

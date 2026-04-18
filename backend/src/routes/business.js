@@ -58,4 +58,26 @@ router.get('/requests', verifyFirebaseToken, checkRole(['business']), async (req
   }
 });
 
+// Update request status to Paid after successful payment
+router.patch('/requests/:id/pay', verifyFirebaseToken, checkRole(['business']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.mongoUser._id;
+
+    const request = await MaterialRequest.findOne({ _id: id, userId });
+    if (!request) return res.status(404).json({ message: 'Request not found' });
+
+    if (request.status !== 'Accepted') {
+      return res.status(400).json({ message: 'Only accepted requests can be paid' });
+    }
+
+    request.status = 'Paid';
+    await request.save();
+
+    res.json({ message: 'Status updated to Paid', request });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

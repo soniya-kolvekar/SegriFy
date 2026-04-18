@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 
 interface User {
   id: string; // MongoDB ID
+  _id?: string; // MongoDB ID Alternative
   firebaseUid: string;
   name: string;
   email: string;

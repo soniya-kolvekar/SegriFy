@@ -16,9 +16,13 @@ import {
   User,
   Gavel,
   Menu,
-  X
+  X,
+  Package
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useAuthStore } from '@/context/useAuthStore';
+import { auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 
 interface MunicipalLayoutProps {
   children: ReactNode;
@@ -27,9 +31,30 @@ interface MunicipalLayoutProps {
 export default function MunicipalLayout({ children }: MunicipalLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { user } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
+  React.useEffect(() => {
+    if (!user) {
+      router.replace('/login');
+    } else if (user.role !== 'municipal') {
+      router.replace('/dashboard'); // or standard fallback
+    }
+  }, [user, router]);
+
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      useAuthStore.getState().logout();
+      router.replace('/login');
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
+  };
+
+  if (!user || user.role !== 'municipal') return null;
 
   const SidebarItem = ({ icon: Icon, label, href }: { icon: any, label: string, href: string }) => {
     const active = pathname === href;
@@ -62,6 +87,7 @@ export default function MunicipalLayout({ children }: MunicipalLayoutProps) {
 
         <nav className="flex-1 mt-4">
           <SidebarItem icon={LayoutDashboard} label="Overview" href="/municipal" />
+          <SidebarItem icon={Package} label="Inventory" href="/municipal/inventory" />
           <SidebarItem icon={Building2} label="Business" href="/municipal/business" />
           <SidebarItem icon={MessageSquare} label="Complaints" href="/municipal/complaints" />
           <SidebarItem icon={Gavel} label="Fines" href="/municipal/fines" />
@@ -70,9 +96,12 @@ export default function MunicipalLayout({ children }: MunicipalLayoutProps) {
 
         <div className="p-6 space-y-4 text-center">
           <div className="pt-4 space-y-1">
-            <div className="flex items-center gap-3 px-4 py-2 text-gray-500 hover:text-red-600 cursor-pointer">
-              <LogOut className="w-4 h-4" />
-              <span className="text-xs font-bold">Logout</span>
+            <div 
+              onClick={handleLogout}
+              className="flex items-center gap-3 px-4 py-2 text-gray-400 hover:text-red-600 cursor-pointer transition-colors group"
+            >
+              <LogOut className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Logout</span>
             </div>
           </div>
         </div>
@@ -103,6 +132,7 @@ export default function MunicipalLayout({ children }: MunicipalLayoutProps) {
         <nav className="flex-1 mt-4">
           {[
             { icon: LayoutDashboard, label: 'Overview', href: '/municipal' },
+            { icon: Package, label: 'Inventory', href: '/municipal/inventory' },
             { icon: Building2, label: 'Business', href: '/municipal/business' },
             { icon: MessageSquare, label: 'Complaints', href: '/municipal/complaints' },
             { icon: Gavel, label: 'Fines', href: '/municipal/fines' },
@@ -117,6 +147,14 @@ export default function MunicipalLayout({ children }: MunicipalLayoutProps) {
               <span className="text-sm font-black uppercase tracking-widest">{item.label}</span>
             </div>
           ))}
+
+          <div 
+            onClick={handleLogout}
+            className="flex items-center gap-4 px-8 py-6 text-red-500 bg-red-50/30 cursor-pointer mt-4"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="text-sm font-black uppercase tracking-widest">Terminate Session</span>
+          </div>
         </nav>
       </aside>
 

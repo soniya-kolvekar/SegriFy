@@ -10,6 +10,7 @@ import { useAuthStore } from '@/context/useAuthStore';
 import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect } from 'react';
 
 const cn = (...c: any[]) => c.filter(Boolean).join(' ');
 
@@ -20,7 +21,16 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const { user, setAuth } = useAuthStore();
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'municipal') router.replace('/municipal');
+      else if (user.role === 'worker') router.replace('/worker');
+      else if (user.role === 'business') router.replace('/dashboard/business');
+      else router.replace('/dashboard');
+    }
+  }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,8 +42,12 @@ export default function LoginPage() {
       const tokenResult = await userCredential.user.getIdTokenResult(true);
       const firebaseToken = tokenResult.token;
       
-      // Admin override check
-      if (tokenResult.claims.admin) {
+      // Admin override check — Use custom claim if necessary, but prefer DB identity
+      // Note: For 'admin@segrify.gov', we want to use the actual MongoDB profile details.
+      if (tokenResult.claims.admin && email === 'admin@segrify.gov') {
+        // Fall through to fetch the real DB profile via /api/auth/me
+        console.log("Admin claim detected for core account, fetching DB profile...");
+      } else if (tokenResult.claims.admin) {
         setAuth({
             id: 'admin_override',
             firebaseUid: userCredential.user.uid,
@@ -56,19 +70,20 @@ export default function LoginPage() {
       if (response.ok) {
         setAuth(data.user, firebaseToken);
         
-        if (!data.user.houseId && !data.user.shopId) {
-          router.push('/setup');
-          return;
-        }
+        // Unified Onboarding/Dashboard Redirect
+        const role = data.user.role || 'citizen';
+        const hasIdentity = data.user.houseId || data.user.shopId;
 
-        if (data.user.role === 'municipal') {
+        if (role === 'municipal') {
           router.push('/municipal');
-        } else if (data.user.role === 'worker') {
+        } else if (role === 'worker') {
           router.push('/worker');
-        } else if (data.user.role === 'business') {
-          router.push('/dashboard/business');
+        } else if (!hasIdentity) {
+          // New User / Incomplete Profile -> Setup
+          router.push('/setup');
         } else {
-          router.push('/dashboard');
+          // Returning User -> Respective Dashboard
+          router.push(role === 'business' ? '/dashboard/business' : '/dashboard');
         }
       } else {
         setError(data.message || 'Failed to load user profile.');

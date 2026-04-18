@@ -10,6 +10,7 @@ import { useAuthStore } from '@/context/useAuthStore';
 import { auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect } from 'react';
 
 const cn = (...c: any[]) => c.filter(Boolean).join(' ');
 
@@ -22,7 +23,16 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const { user, setAuth } = useAuthStore();
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'municipal') router.replace('/municipal');
+      else if (user.role === 'worker') router.replace('/worker');
+      else if (user.role === 'business') router.replace('/dashboard/business');
+      else router.replace('/dashboard');
+    }
+  }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

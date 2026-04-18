@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   BarChart3, 
   Clock, 
@@ -20,7 +20,7 @@ interface Request {
   itemType: string;
   quantity: number;
   estimatedAmount: number;
-  status: 'Pending' | 'Accepted' | 'Rejected';
+  status: 'Pending' | 'Accepted' | 'Rejected' | 'Paid';
   createdAt: string;
 }
 
@@ -31,23 +31,42 @@ export default function BusinessDashboard() {
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const { firebaseToken, user } = useAuthStore();
 
+  const fetchRequests = useCallback(async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/business/requests', {
+        headers: { 'Authorization': `Bearer ${firebaseToken}` }
+      });
+      const data = await res.json();
+      setRequests(data);
+    } catch (err) {
+      console.error('Error fetching requests:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [firebaseToken]);
+
   useEffect(() => {
     setMounted(true);
-    const fetchRequests = async () => {
-      try {
-        const res = await fetch('http://localhost:5000/api/business/requests', {
-          headers: { 'Authorization': `Bearer ${firebaseToken}` }
-        });
-        const data = await res.json();
-        setRequests(data);
-      } catch (err) {
-        console.error('Error fetching requests:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchRequests();
-  }, [firebaseToken]);
+  }, [fetchRequests]);
+
+  const handlePaymentSuccess = async (requestId: string) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/business/requests/${requestId}/pay`, {
+        method: 'PATCH',
+        headers: { 
+          'Authorization': `Bearer ${firebaseToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (res.ok) {
+        await fetchRequests();
+        setSelectedRequest(null);
+      }
+    } catch (err) {
+      console.error('Payment update error:', err);
+    }
+  };
 
   // Dynamic calculations
   const totalQuantity = requests.reduce((sum, req) => sum + Number(req.quantity || 0), 0);
@@ -66,6 +85,7 @@ export default function BusinessDashboard() {
     switch (status) {
       case 'Accepted': return 'bg-green-50 text-green-700';
       case 'Rejected': return 'bg-red-50 text-red-700';
+      case 'Paid': return 'bg-green-600 text-white';
       default: return 'bg-brand-secondary text-brand-primary/60';
     }
   };
@@ -189,9 +209,7 @@ export default function BusinessDashboard() {
                 buttonText="Proceed to Payment"
                 className="w-full bg-brand-primary text-white py-4 font-black uppercase tracking-widest text-sm hover:brightness-110 transition-all"
                 onSuccess={(data) => {
-                  alert('Payment Successful!');
-                  setSelectedRequest(null);
-                  // Refresh requests list here if needed
+                  handlePaymentSuccess(selectedRequest._id);
                 }}
               />
             )}

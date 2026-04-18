@@ -16,6 +16,7 @@ import {
 import { QRCodeCanvas } from 'qrcode.react';
 import { useAuthStore } from '@/context/useAuthStore';
 import { useRouter } from 'next/navigation';
+import { useRealTime } from '@/hooks/useRealTime';
 
 const cn = (...c: any[]) => c.filter(Boolean).join(' ');
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -62,6 +63,20 @@ export default function HomeownerDashboard() {
   }, [currentMonth, token]);
 
   useEffect(() => { fetchCalendar(); }, [fetchCalendar]);
+
+  // Real-time synchronization
+  const handleRealTimeUpdate = useCallback((data: any) => {
+    // Only refresh if the update belongs to THIS user
+    if (data.userId === profile?._id || data.userId === user?.id) {
+      console.log('Refreshing dashboard for real-time news...');
+      // Re-fetch everything
+      fetchCalendar();
+      fetch(`${API}/api/homeowner/profile`, { headers }).then(r => r.json()).then(res => setProfile(res.user));
+      fetch(`${API}/api/homeowner/rewards`, { headers }).then(r => r.json()).then(res => setRewardData(res));
+    }
+  }, [profile, user, token, API, fetchCalendar]);
+
+  useRealTime(handleRealTimeUpdate);
 
   const getDayStatus = (date: Date) => {
     const rec = calendarRecords.find(r => isSameDay(new Date(r.date), date));
@@ -141,8 +156,8 @@ export default function HomeownerDashboard() {
                   value={profile.qrPayload || profile.qrToken} 
                   size={140} 
                   level="H"
-                  includeMargin={false}
-                  className="rounded-none"
+                  includeMargin={true}
+                  className="rounded-none border-2 border-slate-100"
                 />
               </div>
             ) : (
@@ -268,8 +283,8 @@ export default function HomeownerDashboard() {
                       {getSelectedRecord()?.status}
                     </div>
                     <div className="bg-white rounded-none p-5 border border-[#E5E2D9] flex-1">
-                      <p className="text-[9px] font-black text-[#7A7D74] uppercase mb-2">Waste Type</p>
-                      <p className="font-bold text-[#2D3128] capitalize">{getSelectedRecord()?.wasteType || '—'}</p>
+                      <p className="text-[9px] font-black text-[#7A7D74] uppercase mb-2">Note</p>
+                      <p className="font-bold text-[#2D3128] capitalize">Validation logged by Municipal Authority</p>
                     </div>
                   </>
                 ) : (

@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const materialSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
   costPerTon: { type: Number, required: true },
+  availableQuantity: { type: Number, default: 0 },
   description: { type: String },
   unit: { type: String, default: 'ton' },
   updatedAt: { type: Date, default: Date.now }
