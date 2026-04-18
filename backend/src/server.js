@@ -56,7 +56,7 @@ app.get('/', (req, res) => {
 });
 
 // Connect to MongoDB
-const PORT = process.env.PORT || 5005; // Using 5005 as per frontend expectation
+const PORT = process.env.PORT || 5000; // Using 5000 as standard backend port
 const MONGO_URI = process.env.MONGO_URI;
 
 console.log('Connecting to MongoDB...');

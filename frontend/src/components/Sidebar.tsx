@@ -11,7 +11,8 @@ import {
   LogOut,
   Leaf,
   Home,
-  FileText
+  FileText,
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuthStore } from '@/context/useAuthStore';
@@ -21,7 +22,7 @@ import { signOut } from 'firebase/auth';
 const sidebarItems = [
   { name: 'Overview', href: '/dashboard', icon: LayoutGrid },
   { name: 'Rewards', href: '/dashboard/rewards', icon: Wallet },
-  { name: 'Complaints', href: '/dashboard/complaints', icon: MessageCircle },
+  { name: 'Actions', href: '/dashboard/actions', icon: AlertTriangle },
 ];
 
 const businessItems = [

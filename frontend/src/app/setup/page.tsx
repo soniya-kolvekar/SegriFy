@@ -56,7 +56,7 @@ export default function SetupPage() {
     setLoading(true);
     try {
       const maskedAadhaar = `XXXX-XXXX-${form.aadhaarNumber.slice(-4)}`;
-      const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5005';
+      const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       
       // Determine whether to send houseId or shopId
       const payload: any = {

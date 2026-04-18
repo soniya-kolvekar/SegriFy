@@ -130,11 +130,7 @@ export default function LoginPage() {
             <Leaf className="w-[600px] h-[600px] text-[#4D5443]" />
         </div>
 
-        <div className="relative z-10 flex items-center gap-6 grayscale opacity-60">
-           <div className="text-[10px] font-black text-[#7A7D74] uppercase tracking-widest">In collaboration with</div>
-           <div className="w-8 h-8 rounded bg-[#2D3128]" />
-           <div className="w-8 h-8 rounded bg-[#4D5443]" />
-        </div>
+
       </div>
 
       {/* Right Form Panel */}
@@ -156,7 +152,7 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-[#7A7D74] uppercase tracking-widest ml-1">Mobile Number / Email Address</label>
+              <label className="text-[10px] font-black text-[#7A7D74] uppercase tracking-widest ml-1">Email Address</label>
               <div className="relative group">
                 <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A7D74] group-focus-within:text-[#4D5443] transition-colors" />
                 <input 
@@ -173,7 +169,6 @@ export default function LoginPage() {
             <div className="space-y-1.5 relative">
               <div className="flex justify-between items-center mb-0.5 px-1">
                 <label className="text-[10px] font-black text-[#7A7D74] uppercase tracking-widest">Password</label>
-                <button type="button" className="text-[9px] font-black text-[#4D5443] uppercase tracking-widest hover:underline">Forgot Password?</button>
               </div>
               <div className="relative group">
                 <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A7D74] group-focus-within:text-[#4D5443] transition-colors" />
@@ -195,10 +190,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 px-1">
-               <input type="checkbox" id="remember" className="w-4 h-4 rounded border-[#E5E2D9] text-[#4D5443] focus:ring-[#4D5443]" />
-               <label htmlFor="remember" className="text-xs font-medium text-[#7A7D74]">Remember this device for 30 days</label>
-            </div>
+
 
             <button 
               type="submit"
@@ -218,16 +210,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Footer link for both panels */}
-      <div className="absolute bottom-10 left-0 w-full flex flex-col items-center gap-4 text-center px-6">
-          <div className="flex gap-8 text-[9px] font-black text-[#7A7D74] uppercase tracking-widest">
-            <a href="#" className="hover:text-[#4D5443]">Privacy Policy</a>
-            <a href="#" className="hover:text-[#4D5443]">Terms of Service</a>
-            <a href="#" className="hover:text-[#4D5443]">Accessibility</a>
-            <a href="#" className="hover:text-[#4D5443]">Contact</a>
-          </div>
-          <p className="text-[9px] font-bold text-[#7A7D74]/50 uppercase tracking-[0.2em]">© 2024 SEGRIFY MUNICIPAL INFRASTRUCTURE. ALL RIGHTS RESERVED.</p>
-      </div>
+
     </div>
   );
 }

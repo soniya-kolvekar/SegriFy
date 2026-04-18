@@ -4,6 +4,8 @@ const User = require('../models/User');
 const SegregationRecord = require('../models/SegregationRecord');
 const Reward = require('../models/Reward');
 const Complaint = require('../models/Complaint');
+const Fine = require('../models/Fine');
+const crypto = require('crypto');
 const { verifyFirebaseToken } = require('../middleware/auth');
 
 // POST /api/homeowner/setup  — One-time profile completion after signup
@@ -25,15 +27,9 @@ router.post('/setup', verifyFirebaseToken, async (req, res) => {
     }
 
     // Generate QR based on finalId — deterministic and unique
-    const normalizedId = finalId.toUpperCase().replace(/\s+/g, '-');
-    const uidSuffix = req.user.firebaseUid.slice(-6).toUpperCase();
-    const qrToken = `${normalizedId}-${uidSuffix}`;
-    const qrPayload = JSON.stringify({ 
-      houseId: houseId || 'NA', 
-      shopId: shopId || 'NA',
-      token: qrToken, 
-      uid: req.user.firebaseUid 
-    });
+    const normalizedId = finalId.toUpperCase().trim();
+    const qrToken = normalizedId;
+    const qrPayload = normalizedId;
 
     user.name = name;
     if (houseId) user.houseId = houseId;
@@ -163,6 +159,66 @@ router.post('/complaint', verifyFirebaseToken, async (req, res) => {
 
     res.status(201).json({ message: 'Complaint submitted successfully', complaint });
   } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/homeowner/complaints
+// Fetch all past complaints for the citizen
+router.get('/complaints', verifyFirebaseToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ firebaseUid: req.user.firebaseUid });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const complaints = await Complaint.find({ userId: user._id }).sort({ createdAt: -1 });
+    res.json({ complaints });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/homeowner/fines
+// Fetch all fines attached to the citizen
+router.get('/fines', verifyFirebaseToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ firebaseUid: req.user.firebaseUid });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const fines = await Fine.find({ userId: user._id }).sort({ issuedAt: -1 });
+    res.json({ fines });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST /api/homeowner/fines/pay
+// Razorpay Verification Hook -> mark fine as 'paid'
+router.post('/fines/pay', verifyFirebaseToken, async (req, res) => {
+  try {
+    const { fineId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    
+    // RSA Verification
+    const sign = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSign = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(sign.toString())
+      .digest("hex");
+
+    if (razorpay_signature !== expectedSign) {
+      return res.status(400).json({ message: "Invalid Signature. Fine resolution halted." });
+    }
+
+    const fine = await Fine.findById(fineId);
+    if (!fine) return res.status(404).json({ message: "Fine not found!" });
+
+    fine.status = 'paid';
+    fine.paymentId = razorpay_payment_id;
+    fine.resolvedAt = new Date();
+    await fine.save();
+
+    res.json({ message: "Fine paid successfully", fine });
+  } catch (err) {
+    console.error('Fine Payment Verification Error:', err);
     res.status(500).json({ message: err.message });
   }
 });

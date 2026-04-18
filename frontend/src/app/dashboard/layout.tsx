@@ -46,14 +46,8 @@ export default function DashboardLayout({
       <main className="flex-1 ml-64 min-h-screen overflow-y-auto font-sans antialiased">
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-[#E5E2D9] flex items-center justify-between px-10 sticky top-0 z-40">
           <div className="flex items-center gap-8 flex-1">
-             <div className="relative w-full max-w-md group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A7D74] group-focus-within:text-[#2D3128] transition-colors" />
-                <input 
-                  type="text" 
-                  placeholder="Search infrastructure data..." 
-                  className="w-full bg-[#EBE9E0]/50 border-none rounded-none py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-[#4D5443]/20 focus:bg-white transition-all outline-none"
-                />
-             </div>
+          <div className="flex items-center gap-8 flex-1">
+          </div>
           </div>
 
           <div className="flex items-center gap-6">

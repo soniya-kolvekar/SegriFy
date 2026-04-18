@@ -37,16 +37,9 @@ router.post('/sync', verifyFirebaseToken, async (req, res) => {
     // The QR code payload encodes a JSON string so workers can scan and get full context.
     const normalizedHouseId = (houseId || shopId || 'NA')
       .toUpperCase()
-      .replace(/\s+/g, '-');
-    const uidSuffix = firebaseUid.slice(-6).toUpperCase();
-    const qrToken = `${normalizedHouseId}-${uidSuffix}`;
-
-    // The value stored in the QR code (scanned by worker app)
-    const qrPayload = JSON.stringify({
-      houseId: houseId || shopId || 'NA',
-      token: qrToken,
-      uid: firebaseUid
-    });
+      .trim();
+    const qrToken = normalizedHouseId;
+    const qrPayload = normalizedHouseId;
 
     user = new User({
       firebaseUid,
@@ -113,7 +106,7 @@ router.patch('/update-profile', verifyFirebaseToken, async (req, res) => {
     const user = await User.findOneAndUpdate(
       { firebaseUid },
       updatePayload,
-      { returnDocument: 'after' }
+      { new: true }
     );
 
     if (!user) {

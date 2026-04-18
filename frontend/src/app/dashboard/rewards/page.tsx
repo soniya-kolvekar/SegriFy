@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { 
   Trophy, 
@@ -18,12 +18,13 @@ import {
 import { useAuthStore } from '@/context/useAuthStore';
 
 const cn = (...c: any[]) => c.filter(Boolean).join(' ');
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5005';
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export default function RewardsPage() {
   const { firebaseToken: token } = useAuthStore();
   const [rewardData, setRewardData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showLearnMore, setShowLearnMore] = useState(false);
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -48,38 +49,10 @@ export default function RewardsPage() {
       {/* Header Section */}
       <div className="flex flex-col gap-2">
         <h1 className="text-4xl font-black text-[#2D3128]">Rewards & Achievements</h1>
-        <p className="text-[#7A7D74] font-medium text-lg">Earn points for every proper waste segregation</p>
+        <p className="text-[#7A7D74] font-medium text-lg">Earn monetary incentives for every proper waste segregation</p>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard 
-          icon={Wallet} 
-          label="Total Points" 
-          value={rewardData?.totalPoints ?? 0} 
-          sub="Available for redemption"
-          color="bg-[#4D5443]"
-        />
-        <StatCard 
-          icon={Target} 
-          label="This Month's Accuracy" 
-          value={`${Math.round(((rewardData?.totalCount - rewardData?.improperCount) / (rewardData?.totalCount || 1)) * 100)}%`} 
-          sub={`${rewardData?.improperCount ?? 0} improper segregations`}
-          color="bg-[#EBE9E0]"
-          darkText
-        />
-        <StatCard 
-          icon={Trophy} 
-          label="Rank" 
-          value="Green Citizen" 
-          sub="Top 15% in your area"
-          color="bg-white"
-          darkText
-          border
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 gap-8">
         {/* Eligibility Status */}
         <div className="lg:col-span-4 space-y-6">
           <div className={cn(
@@ -110,22 +83,17 @@ export default function RewardsPage() {
               <div className="bg-white/60 p-5 rounded-none border border-red-100 flex items-start gap-3 text-left">
                 <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
                 <p className="text-xs font-bold text-red-700 uppercase leading-relaxed tracking-tight">
-                  You have exceeded the monthly limit of improper marks. Points will not be awarded for the rest of this month.
+                  You have exceeded the monthly limit of improper marks. Financial rewards will not be awarded for the rest of this month.
                 </p>
               </div>
             )}
 
-            <button className="w-full bg-[#F5F4F0] py-4 rounded-none font-black text-xs uppercase tracking-widest text-[#4D5443] hover:bg-[#EBE9E0] transition-colors flex items-center justify-center gap-2">
+            <button 
+              onClick={() => setShowLearnMore(true)}
+              className="w-full bg-[#F5F4F0] py-4 rounded-none font-black text-xs uppercase tracking-widest text-[#4D5443] hover:bg-[#EBE9E0] transition-colors flex items-center justify-center gap-2"
+            >
               Learn about rewards <ChevronRight className="w-4 h-4" />
             </button>
-          </div>
-
-          <div className="bg-[#4D5443] rounded-none p-8 text-white relative overflow-hidden">
-            <Gift className="absolute -right-6 -bottom-6 w-32 h-32 text-white/10" />
-            <div className="relative z-10">
-              <h4 className="text-xl font-black">Coming Soon</h4>
-              <p className="text-white/60 text-sm mt-1 font-medium leading-relaxed">Redeem your points for local shop discounts and municipal tax rebates.</p>
-            </div>
           </div>
         </div>
 
@@ -133,10 +101,6 @@ export default function RewardsPage() {
         <div className="lg:col-span-8 bg-white rounded-none p-10 border border-[#E5E2D9] shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-2xl font-black text-[#2D3128]">Transaction History</h3>
-            <div className="flex items-center gap-2 bg-[#F5F4F0] px-4 py-2 rounded-none">
-              <TrendingUp className="w-4 h-4 text-[#4D5443]" />
-              <span className="text-xs font-black text-[#4D5443] uppercase tracking-widest">+12% from last month</span>
-            </div>
           </div>
 
           {rewardData?.segregationHistory?.length > 0 ? (
@@ -147,7 +111,7 @@ export default function RewardsPage() {
                     <th className="px-6 py-4 text-[10px] font-black text-[#7A7D74] uppercase tracking-widest">Date</th>
                     <th className="px-6 py-4 text-[10px] font-black text-[#7A7D74] uppercase tracking-widest">Type</th>
                     <th className="px-6 py-4 text-[10px] font-black text-[#7A7D74] uppercase tracking-widest text-center">Status</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-[#7A7D74] uppercase tracking-widest text-right">Points Earned</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-[#7A7D74] uppercase tracking-widest text-right">Amount Earned</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F5F4F0]">
@@ -172,7 +136,7 @@ export default function RewardsPage() {
                         "px-6 py-5 text-right font-black text-lg",
                         tx.status === 'proper' ? "text-[#4D5443]" : "text-[#7A7D74]/30"
                       )}>
-                        {tx.status === 'proper' ? '+50' : '0'}
+                        {tx.status === 'proper' ? '₹50.00' : '₹0.00'}
                       </td>
                     </tr>
                   ))}
@@ -189,6 +153,62 @@ export default function RewardsPage() {
           )}
         </div>
       </div>
+
+      {/* Learn More Modal */}
+      <AnimatePresence>
+        {showLearnMore && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-[#2D3128]/40 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white w-full max-w-lg p-10 border border-[#E5E2D9] shadow-2xl rounded-none relative"
+            >
+              <button 
+                onClick={() => setShowLearnMore(false)}
+                className="absolute top-6 right-6 text-[#7A7D74] hover:text-red-500 font-bold transition-colors"
+                title="Close"
+              >
+                ✕
+              </button>
+              
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-[#EBE9E0] rounded-none inline-block">
+                  <Gift className="w-6 h-6 text-[#4D5443]" />
+                </div>
+                <h3 className="text-2xl font-black text-[#2D3128]">Reward System</h3>
+              </div>
+              
+              <div className="space-y-6 text-[#4D5443]">
+                <div>
+                  <h4 className="text-sm font-black text-[#7A7D74] uppercase tracking-widest mb-1">How It Works</h4>
+                  <p className="text-base font-medium leading-relaxed">
+                    Whenever you hand over your segregated waste to the municipal collector, they will scan your unique Homeowner QR code. 
+                    If your segregation is approved, monetary rewards are disbursed directly to your ledger!
+                  </p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-[#7A7D74] uppercase tracking-widest mb-1">The 3-Strike Rule</h4>
+                  <p className="text-base font-medium leading-relaxed">
+                    If your waste is improperly segregated, the collector will mark it as such. 
+                    Receiving <strong className="text-red-500 font-black">3 improper marks</strong> in a single month will temporarily suspend your rewards capability until the first day of the next month.
+                  </p>
+                </div>
+
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-[#E5E2D9]">
+                <button 
+                  onClick={() => setShowLearnMore(false)}
+                  className="w-full bg-[#4D5443] text-white py-4 font-black uppercase tracking-widest text-sm hover:brightness-110 transition-all rounded-none"
+                >
+                  Understood
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

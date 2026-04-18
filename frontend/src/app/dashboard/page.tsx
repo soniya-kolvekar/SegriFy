@@ -18,7 +18,7 @@ import { useAuthStore } from '@/context/useAuthStore';
 import { useRouter } from 'next/navigation';
 
 const cn = (...c: any[]) => c.filter(Boolean).join(' ');
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5005';
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export default function HomeownerDashboard() {
   const { user, firebaseToken: token } = useAuthStore();
@@ -117,7 +117,7 @@ export default function HomeownerDashboard() {
               <ProfileItem icon={HomeIcon} label="House / Flat No. (Primary Key)" value={profile?.houseId || 'Not set'} />
               <ProfileItem icon={CreditCard} label="Aadhaar (Masked)" value={profile?.maskedAadhaar || 'Not set'} />
               <ProfileItem icon={User} label="Role" value="Resident · Homeowner" />
-              <ProfileItem icon={Trophy} label="Points Balance" value={`${profile?.points ?? 0} pts`} />
+
             </div>
           </div>
 
