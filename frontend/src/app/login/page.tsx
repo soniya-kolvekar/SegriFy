@@ -83,33 +83,6 @@ export default function LoginPage() {
   };
 
   return (
-<<<<<<< Updated upstream
-    <div className="min-h-screen bg-brand-bg flex items-center justify-center p-6">
-      <div className="w-full max-w-[480px] bg-white p-12 rounded-none shadow-none border border-brand-muted relative overflow-hidden">
-        <div className="absolute -top-20 -right-20 w-64 h-64 bg-brand-secondary/20 rounded-none blur-3xl"></div>
-        <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-brand-accent/5 rounded-none blur-3xl"></div>
-
-        <div className="relative z-10 w-full">
-          <div className="flex flex-col items-center mb-10 text-center">
-            <div className="bg-brand-primary p-4 rounded-none mb-6 shadow-none">
-              <Leaf className="w-10 h-10 text-white" />
-            </div>
-            <h1 className="text-4xl font-heading font-black text-brand-primary uppercase tracking-tighter">SegriFy</h1>
-            <p className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest mt-2">Join the real-time waste revolution</p>
-          </div>
-
-          {error && (
-            <div className="bg-red-50 text-red-700 p-4 rounded-none text-[10px] font-black uppercase tracking-widest mb-8 text-center border border-red-100">
-              {error}
-            </div>
-          )}
-
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-brand-primary uppercase tracking-widest ml-1">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-primary/40" />
-=======
     <div className="min-h-screen bg-[#FDFBF7] flex flex-col md:flex-row font-sans selection:bg-[#4D5443] selection:text-white">
       
       {/* Left Branding Panel */}
@@ -206,29 +179,17 @@ export default function LoginPage() {
               <label className="text-[10px] font-black text-[#7A7D74] uppercase tracking-widest ml-1">Mobile Number / Email Address</label>
               <div className="relative group">
                 <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A7D74] group-focus-within:text-[#4D5443] transition-colors" />
->>>>>>> Stashed changes
                 <input 
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-<<<<<<< Updated upstream
-                  placeholder="name@example.com" 
-                  className="w-full bg-brand-bg py-4 pl-12 pr-6 rounded-none border border-brand-muted text-sm font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary transition-all"
-=======
                   placeholder="e.g. name@infrastructure.gov" 
                   className="w-full bg-white py-5 pl-14 pr-6 rounded-none border border-[#E5E2D9] text-sm font-medium focus:ring-4 focus:ring-[#4D5443]/5 focus:border-[#4D5443] transition-all outline-none"
->>>>>>> Stashed changes
                   required
                 />
               </div>
             </div>
 
-<<<<<<< Updated upstream
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-brand-primary uppercase tracking-widest ml-1">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-primary/40" />
-=======
             <div className="space-y-1.5 relative">
               <div className="flex justify-between items-center mb-0.5 px-1">
                 <label className="text-[10px] font-black text-[#7A7D74] uppercase tracking-widest">Password</label>
@@ -236,17 +197,12 @@ export default function LoginPage() {
               </div>
               <div className="relative group">
                 <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A7D74] group-focus-within:text-[#4D5443] transition-colors" />
->>>>>>> Stashed changes
                 <input 
                   type={showPassword ? "text" : "password"} 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••" 
-<<<<<<< Updated upstream
-                  className="w-full bg-brand-bg py-4 pl-12 pr-6 rounded-none border border-brand-muted text-sm font-bold text-brand-primary focus:ring-1 focus:ring-brand-primary transition-all"
-=======
                   className="w-full bg-white py-5 pl-14 pr-14 rounded-none border border-[#E5E2D9] text-sm font-medium focus:ring-4 focus:ring-[#4D5443]/5 focus:border-[#4D5443] transition-all outline-none"
->>>>>>> Stashed changes
                   required
                 />
                 <button 
@@ -267,18 +223,6 @@ export default function LoginPage() {
             <button 
               type="submit"
               disabled={loading}
-<<<<<<< Updated upstream
-              className="w-full bg-brand-primary py-5 rounded-none text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-brand-primary/10 hover:brightness-110 transition-all flex items-center justify-center gap-3 group disabled:opacity-50"
-            >
-              {loading ? 'Authenticating...' : 'Sign In'}
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </form>
-
-          <div className="mt-12 text-center">
-            <p className="text-[10px] text-brand-primary/40 font-black uppercase tracking-widest">
-              Don't have an account? <span className="text-brand-primary hover:underline cursor-pointer" onClick={() => router.push('/signup')}>Start Segregating</span>
-=======
               className="w-full bg-[#4D5443] py-5 rounded-none text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-[#4D5443]/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
             >
               {loading ? 'Authenticating...' : 'Continue to Dashboard'}
@@ -289,7 +233,6 @@ export default function LoginPage() {
           <div className="pt-8 text-center border-t border-[#F0EEE9]">
             <p className="text-sm text-[#7A7D74] font-medium">
               New to the infrastructure? <span className="text-[#4D5443] font-black hover:underline cursor-pointer" onClick={() => router.push('/signup')}>Register for New Request</span>
->>>>>>> Stashed changes
             </p>
           </div>
         </div>

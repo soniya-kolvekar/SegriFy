@@ -15,14 +15,10 @@ import {
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useAuthStore } from '@/context/useAuthStore';
-<<<<<<< Updated upstream
-import { useRealTime } from '@/hooks/useRealTime';
 import { useRouter } from 'next/navigation';
-=======
 
 const cn = (...c: any[]) => c.filter(Boolean).join(' ');
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5005';
->>>>>>> Stashed changes
 
 export default function HomeownerDashboard() {
   const { user, firebaseToken: token } = useAuthStore();
@@ -32,19 +28,15 @@ export default function HomeownerDashboard() {
   const [calendarRecords, setCalendarRecords] = useState<any[]>([]);
   const [rewardData, setRewardData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-<<<<<<< Updated upstream
-  const [mounted, setMounted] = useState(false);
+  const [showQR, setShowQR] = useState(false);
   const router = useRouter();
 
+  // Redirect if business
   useEffect(() => {
-    setMounted(true);
     if (user && user.role === 'business') {
       router.push('/dashboard/business');
     }
   }, [user, router]);
-=======
-  const [showQR, setShowQR] = useState(false);
->>>>>>> Stashed changes
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -92,7 +84,6 @@ export default function HomeownerDashboard() {
     document.body.removeChild(link);
   };
 
-
   const days = eachDayOfInterval({ start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) });
   const startDay = getDay(startOfMonth(currentMonth));
 
@@ -108,22 +99,6 @@ export default function HomeownerDashboard() {
   }
 
   return (
-<<<<<<< Updated upstream
-    <div className="p-8 lg:p-12 space-y-12 font-sans antialiased">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h1 className="text-4xl font-black text-brand-primary uppercase tracking-tight">Welcome back, {stats?.user?.name || 'Citizen'}!</h1>
-          <p className="text-brand-primary/60 mt-2 text-lg font-bold uppercase tracking-tight">Your waste management overview is looking great this month.</p>
-        </div>
-        <div className="bg-brand-primary text-white p-6 rounded-none shadow-none border border-brand-muted flex items-center gap-6 min-w-[280px]">
-          <div className="bg-white/10 p-4 rounded-none border border-white/20">
-            <Trophy className="w-8 h-8 text-brand-accent" />
-          </div>
-          <div>
-            <p className="text-white/60 text-[10px] font-black uppercase tracking-widest">Total Points</p>
-            <p className="text-4xl font-black">{stats?.user?.points || 0}</p>
-=======
     <div className="p-8 space-y-8 max-w-[1400px] mx-auto">
 
       {/* ── 1. PROFILE ── */}
@@ -206,7 +181,6 @@ export default function HomeownerDashboard() {
             <p className="text-sm text-[#7A7D74] font-medium mt-1">
               {rewardData?.improperCount ?? 0} / 3 improper segregations
             </p>
->>>>>>> Stashed changes
           </div>
           {!rewardData?.rewardsEligible && (
             <div className="bg-red-50 p-4 rounded-none border border-red-100 flex items-start gap-2 text-left w-full">
@@ -219,24 +193,6 @@ export default function HomeownerDashboard() {
         </motion.div>
       </div>
 
-<<<<<<< Updated upstream
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {[
-          { label: 'Proper Segregation', value: stats?.user?.eligibilityStatus ? 'Eligible' : 'Ineligible', icon: Trash2, color: stats?.user?.eligibilityStatus ? 'bg-green-600' : 'bg-red-600' },
-          { label: 'City Rank', value: '#45', icon: TrendingUp, color: 'bg-brand-primary' },
-          { label: 'Household Status', value: stats?.user?.houseId || 'N/A', icon: ArrowUpRight, color: 'bg-brand-accent' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white p-8 rounded-none border border-brand-muted shadow-none hover:bg-brand-bg transition-colors group cursor-pointer">
-            <div className="flex justify-between items-start">
-              <div className={`${stat.color} p-4 rounded-none text-white`}>
-                <stat.icon className="w-6 h-6" />
-              </div>
-              <ChevronRight className="w-6 h-6 text-brand-primary/20 group-hover:translate-x-1 transition-transform" />
-            </div>
-            <p className="mt-8 text-[10px] font-black text-brand-primary/40 uppercase tracking-widest">{stat.label}</p>
-            <p className="text-3xl font-black text-brand-primary mt-2 uppercase">{stat.value}</p>
-=======
       {/* ── 2. SEGREGATION CALENDAR ── */}
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-12 lg:col-span-8 bg-white rounded-none p-10 border border-[#E5E2D9]">
@@ -249,46 +205,8 @@ export default function HomeownerDashboard() {
               <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-2.5 hover:bg-[#F5F4F0] rounded-none transition-colors"><ChevronLeft className="w-5 h-5 text-[#2D3128]" /></button>
               <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-2.5 hover:bg-[#F5F4F0] rounded-none transition-colors"><ChevronRight className="w-5 h-5 text-[#2D3128]" /></button>
             </div>
->>>>>>> Stashed changes
           </div>
 
-<<<<<<< Updated upstream
-      {/* Main Content: Calendar & Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* Segregation Calendar Placeholder */}
-        <div className="lg:col-span-8 bg-white p-10 rounded-none border border-brand-muted shadow-none">
-          <div className="flex justify-between items-center mb-10 border-b border-brand-muted pb-6">
-            <h2 className="text-xl font-black text-brand-primary uppercase tracking-tight flex items-center gap-3">
-              <CalendarIcon className="w-5 h-5 text-brand-primary/40" />
-              Segregation History
-            </h2>
-            <div className="flex gap-4">
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
-                <div className="w-3 h-3 rounded-none bg-green-600"></div>
-                <span>Proper</span>
-              </div>
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
-                <div className="w-3 h-3 rounded-none bg-red-600"></div>
-                <span>Improper</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-7 gap-2 md:gap-4">
-            {Array.from({ length: 31 }).map((_, i) => {
-               const day = i + 1;
-               const record = stats?.recentRecords?.find((r: any) => new Date(r.date).getDate() === day);
-               const statusClass = record ? (record.status === 'proper' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-200') : 'bg-brand-bg text-brand-primary/10 border-brand-muted/20';
-               
-               return (
-                <div 
-                  key={i} 
-                  className={`aspect-square rounded-none flex items-center justify-center text-xs font-black transition-all border ${statusClass} hover:brightness-95 cursor-pointer`}
-                >
-                  {day}
-                </div>
-               );
-=======
           <div className="grid grid-cols-7 gap-2 text-center">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
               <div key={d} className="text-[9px] font-black text-[#7A7D74] uppercase mb-2">{d}</div>
@@ -312,7 +230,6 @@ export default function HomeownerDashboard() {
                   )}
                 >{format(day, 'd')}</motion.button>
               );
->>>>>>> Stashed changes
             })}
           </div>
 
@@ -323,42 +240,6 @@ export default function HomeownerDashboard() {
           </div>
         </div>
 
-<<<<<<< Updated upstream
-        {/* Recent Activity Section */}
-        <div className="lg:col-span-4 space-y-8">
-          <div className="bg-white p-8 rounded-none border border-brand-muted shadow-none">
-            <h2 className="text-lg font-black text-brand-primary uppercase tracking-tight mb-8">Recent Logs</h2>
-            <div className="space-y-6">
-              {stats?.recentRecords?.map((item: any, i: number) => (
-                <div key={i} className="flex items-center justify-between group">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-none border flex items-center justify-center ${item.status === 'proper' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
-                      <Trash2 className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="font-black text-brand-primary text-[10px] uppercase tracking-wider">{item.wasteType} Waste</p>
-                      <p className="text-[9px] font-bold text-brand-primary/40 uppercase">{mounted ? new Date(item.date).toLocaleDateString() : '...'}</p>
-                    </div>
-                  </div>
-                  <span className={`font-black text-xs ${item.status === 'proper' ? 'text-green-600' : 'text-red-600'}`}>
-                    {item.status === 'proper' ? '+10' : '+0'}
-                  </span>
-                </div>
-              ))}
-              {(!stats?.recentRecords || stats.recentRecords.length === 0) && (
-                <p className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest text-center py-10">No recent activity</p>
-              )}
-            </div>
-          </div>
-          
-          <div className="bg-brand-primary p-8 rounded-none shadow-none text-white border border-brand-muted">
-             <h3 className="font-black text-xs uppercase tracking-widest mb-2 text-brand-accent">Scanner Token</h3>
-             <p className="text-white/40 text-[9px] font-bold uppercase tracking-wider mb-6 leading-tight">Present this identifier to the sanitation worker for verified collection</p>
-             <div className="bg-white p-6 rounded-none flex items-center justify-center border border-white/20">
-                <p className="text-3xl font-black text-brand-primary tracking-[0.3em] ml-2">{stats?.user?.qrToken || 'TOKEN'}</p>
-             </div>
-          </div>
-=======
         {/* Day Detail Panel */}
         <div className="col-span-12 lg:col-span-4">
           <AnimatePresence mode="wait">
@@ -404,7 +285,6 @@ export default function HomeownerDashboard() {
               </div>
             )}
           </AnimatePresence>
->>>>>>> Stashed changes
         </div>
       </div>
 
