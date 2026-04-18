@@ -1,276 +1,200 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  History as HistoryIcon, 
-  Download, 
-  Landmark, 
-  Building2, 
-  ArrowUpRight, 
-  ArrowDownLeft,
-  CheckCircle2, 
+  History, 
+  Search, 
+  Filter, 
+  User, 
   Clock, 
-  Wallet,
-  Users
+  AlertCircle, 
+  CheckCircle2, 
+  ArrowRight,
+  ShieldCheck,
+  TrendingDown,
+  Building2,
+  Trash2,
+  AlertTriangle,
+  Loader2,
+  Calendar
 } from 'lucide-react';
+import { useAuthStore } from '@/context/useAuthStore';
+import { format } from 'date-fns';
 
-export default function HistoryPage() {
-  const [activeFilter, setActiveFilter] = useState<'ALL' | 'GOV' | 'BIZ'>('ALL');
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-  const history = [
-    { 
-      id: 'TXN-90211', 
-      type: 'Government Reward', 
-      typeKey: 'GOV',
-      from: 'Municipal Authority', 
-      to: 'Homeowner: Rajesh Kumar', 
-      amount: '₹450', 
-      date: 'Oct 24, 2024, 09:41 AM', 
-      status: 'Paid',
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-      borderColor: 'border-orange-100',
-      icon: Users,
-      direction: 'OUT'
-    },
-    { 
-      id: 'TXN-90212', 
-      type: 'Material Purchase', 
-      typeKey: 'BIZ',
-      from: 'GreenEarth Composts', 
-      to: 'Municipal Authority', 
-      amount: '₹12,200', 
-      date: 'Oct 24, 2024, 10:15 AM', 
-      status: 'Credited',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-100',
-      icon: Building2,
-      direction: 'IN'
-    },
-    { 
-      id: 'TXN-90213', 
-      type: 'Government Reward', 
-      typeKey: 'GOV',
-      from: 'Municipal Authority', 
-      to: 'Homeowner: Priya Singh', 
-      amount: '₹300', 
-      date: 'Oct 24, 2024, 11:05 AM', 
-      status: 'Paid',
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-      borderColor: 'border-orange-100',
-      icon: Users,
-      direction: 'OUT'
-    },
-    { 
-      id: 'TXN-90214', 
-      type: 'Material Purchase', 
-      typeKey: 'BIZ',
-      from: 'PlasticRevive Lab', 
-      to: 'Municipal Authority', 
-      amount: '₹8,500', 
-      date: 'Oct 23, 2024, 11:20 PM', 
-      status: 'Pending',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-100',
-      icon: Building2,
-      direction: 'IN'
-    },
-    { 
-      id: 'TXN-90215', 
-      type: 'Government Reward', 
-      typeKey: 'GOV',
-      from: 'Municipal Authority', 
-      to: 'Homeowner: Amit Verma', 
-      amount: '₹550', 
-      date: 'Oct 23, 2024, 02:15 PM', 
-      status: 'Paid',
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-      borderColor: 'border-orange-100',
-      icon: Users,
-      direction: 'OUT'
-    },
-    { 
-      id: 'TXN-90216', 
-      type: 'Material Purchase', 
-      typeKey: 'BIZ',
-      from: 'EcoPaper Mill', 
-      to: 'Municipal Authority', 
-      amount: '₹31,000', 
-      date: 'Oct 22, 2024, 10:05 AM', 
-      status: 'Credited',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-100',
-      icon: Building2,
-      direction: 'IN'
-    },
-  ];
+type ActivityType = 'all' | 'complaint' | 'business' | 'enforcement' | 'logistics';
 
-  const filteredHistory = activeFilter === 'ALL' 
-    ? history 
-    : history.filter(h => h.typeKey === activeFilter);
+interface Activity {
+  id: string;
+  type: ActivityType;
+  title: string;
+  detail: string;
+  status: string;
+  date: string;
+}
 
-  const downloadAuditReport = () => {
-    // CSV Header
-    const headers = ["Ref ID", "Category", "Source", "Destination", "Amount", "Timestamp", "Status"];
-    
-    // CSV Content
-    const csvContent = [
-      headers.join(","),
-      ...filteredHistory.map(txn => {
-        return [
-          txn.id,
-          `"${txn.type}"`,
-          `"${txn.from}"`,
-          `"${txn.to}"`,
-          `"${txn.amount}"`,
-          `"${txn.date}"`,
-          txn.status
-        ].join(",");
-      })
-    ].join("\n");
+export default function MunicipalHistory() {
+  const { firebaseToken } = useAuthStore();
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<ActivityType>('all');
+  const [search, setSearch] = useState('');
 
-    // Create and trigger download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Municipal_Audit_Report_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch(`${API}/api/municipal/history`, {
+        headers: { Authorization: `Bearer ${firebaseToken}` }
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setActivities(data);
+      }
+    } catch (err) {
+      console.error('Error fetching history:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory();
+    // Auto refresh every 30 seconds
+    const interval = setInterval(fetchHistory, 30000);
+    return () => clearInterval(interval);
+  }, [firebaseToken]);
+
+  const filteredActivities = activities.filter(act => {
+    const matchesFilter = filter === 'all' || act.type === filter;
+    const matchesSearch = act.title.toLowerCase().includes(search.toLowerCase()) || 
+                          act.detail.toLowerCase().includes(search.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
+  const getIcon = (type: ActivityType) => {
+    switch (type) {
+      case 'complaint': return <AlertCircle className="w-5 h-5 text-red-500" />;
+      case 'business': return <Building2 className="w-5 h-5 text-blue-500" />;
+      case 'enforcement': return <AlertTriangle className="w-5 h-5 text-orange-500" />;
+      case 'logistics': return <Trash2 className="w-5 h-5 text-green-600" />;
+      default: return <History className="w-5 h-5 text-slate-400" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    status = status.toLowerCase();
+    if (['resolved', 'paid', 'proper', 'accepted'].includes(status)) return 'bg-green-100 text-green-800';
+    if (['pending', 'in_progress', 'unpaid'].includes(status)) return 'bg-yellow-100 text-yellow-800';
+    if (['improper', 'rejected'].includes(status)) return 'bg-red-100 text-red-800';
+    return 'bg-slate-100 text-slate-700';
   };
 
   return (
-    <div className="space-y-10 pb-20">
-      {/* Financial Audit Overview - NOW RESPONSIVE */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-        <div className="bg-white p-6 lg:p-8 border border-[#E5E1D8] shadow-sm">
-          <p className="text-[9px] lg:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Total Material Revenue</p>
-          <div className="flex items-center justify-between">
-             <h2 className="text-xl lg:text-3xl font-black text-brand-primary tracking-tighter">₹51,700</h2>
-             <div className="w-8 h-8 lg:w-10 lg:h-10 bg-blue-50 text-blue-600 flex items-center justify-center">
-                <ArrowDownLeft className="w-4 h-4 lg:w-5 lg:h-5" />
-             </div>
+    <div className="p-8 lg:p-12 space-y-10 max-w-[1200px] mx-auto">
+      
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#7A7D74]">
+            <ShieldCheck className="w-3 h-3" />
+            <span>Infrastructure Oversight</span>
           </div>
-          <p className="text-[9px] lg:text-[10px] font-bold text-gray-400 mt-4 uppercase">From Business Purchases</p>
-        </div>
-        
-        <div className="bg-white p-6 lg:p-8 border border-[#E5E1D8] shadow-sm">
-          <p className="text-[9px] lg:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Total Rewards Disbursed</p>
-          <div className="flex items-center justify-between">
-             <h2 className="text-xl lg:text-3xl font-black text-orange-600 tracking-tighter">₹1,300</h2>
-             <div className="w-8 h-8 lg:w-10 lg:h-10 bg-orange-50 text-orange-600 flex items-center justify-center">
-                <ArrowUpRight className="w-4 h-4 lg:w-5 lg:h-5" />
-             </div>
-          </div>
-          <p className="text-[9px] lg:text-[10px] font-bold text-gray-400 mt-4 uppercase">To Homeowner Citizens</p>
+          <h1 className="text-5xl font-black text-[#2D3128] tracking-tighter uppercase italic">
+            Audit Trail<span className="text-[#4D5443]">.</span>
+          </h1>
+          <p className="text-sm font-medium text-[#7A7D74]">Comprehensive log of all municipal interactions and waste management events.</p>
         </div>
 
-        <div className="bg-white p-6 lg:p-8 border border-[#E5E1D8] shadow-sm flex flex-col justify-center">
-           <button 
-            onClick={downloadAuditReport}
-            className="bg-brand-primary text-white py-4 text-[9px] lg:text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-[#3d5a4a] transition-all w-full"
-           >
-              <Download className="w-4 h-4" />
-              Generate Audit Report
-           </button>
+        <div className="flex items-center gap-3 bg-[#EBE9E0] p-1.5 rounded-none border border-[#D9D7CE]">
+          <Search className="w-4 h-4 text-[#7A7D74] ml-2" />
+          <input 
+            type="text" 
+            placeholder="Search logs..." 
+            className="bg-transparent border-none outline-none text-sm font-bold text-[#2D3128] placeholder-[#7A7D74]/50 w-48"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
       </div>
 
-      {/* Transaction Ledger - NOW RESPONSIVE */}
-      <div className="bg-white border border-[#E5E1D8] shadow-sm overflow-hidden flex flex-col">
-        <div className="p-6 lg:p-10 flex flex-col lg:flex-row justify-between items-start lg:items-center border-b border-[#F0EDE7] gap-6">
-          <div>
-            <h3 className="text-xl lg:text-2xl font-black text-brand-primary tracking-tight uppercase">Audit History</h3>
-            <p className="text-xs font-medium text-gray-400 mt-1">Monitoring the flow of material revenue and rewards.</p>
-          </div>
-          
-          <div className="flex bg-[#F0EDE7] w-full lg:w-auto">
-            <button 
-              onClick={() => setActiveFilter('ALL')}
-              className={`px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-all ${activeFilter === 'ALL' ? 'bg-brand-primary text-white' : 'text-gray-400 hover:text-brand-primary'}`}
-            >
-              All
-            </button>
-            <button 
-              onClick={() => setActiveFilter('GOV')}
-              className={`px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-all ${activeFilter === 'GOV' ? 'bg-brand-primary text-white' : 'text-gray-400 hover:text-brand-primary'}`}
-            >
-              Citizen Rewards
-            </button>
-            <button 
-              onClick={() => setActiveFilter('BIZ')}
-              className={`px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-all ${activeFilter === 'BIZ' ? 'bg-brand-primary text-white' : 'text-gray-400 hover:text-brand-primary'}`}
-            >
-              Material Sales
-            </button>
-          </div>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-[#F0EDE7] bg-[#F9F7F2]">
-                <th className="px-10 py-6">Ref ID</th>
-                <th className="px-8 py-6">Category</th>
-                <th className="px-8 py-6">Source (From)</th>
-                <th className="px-8 py-6">Destination (To)</th>
-                <th className="px-8 py-6">Amount</th>
-                <th className="px-8 py-6">Timestamp</th>
-                <th className="px-10 py-6 text-right">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F0EDE7]">
-              {filteredHistory.map((txn) => (
-                <tr key={txn.id} className="group hover:bg-[#F9F7F2] transition-colors">
-                  <td className="px-10 py-8 font-bold text-xs text-gray-400 group-hover:text-brand-primary transition-colors">{txn.id}</td>
-                  <td className="px-8 py-8">
-                    <div className="flex items-center gap-3">
-                       <div className={`p-2 ${txn.bgColor} ${txn.color}`}>
-                          <txn.icon className="w-4 h-4" />
-                       </div>
-                       <span className={`text-[10px] font-black uppercase tracking-widest ${txn.color}`}>
-                          {txn.type}
-                       </span>
+      {/* Filter Bar */}
+      <div className="flex flex-wrap items-center gap-2 pb-2 border-b-2 border-[#E5E2D9]">
+        {(['all', 'complaint', 'business', 'enforcement', 'logistics'] as ActivityType[]).map((t) => (
+          <button
+            key={t}
+            onClick={() => setFilter(t)}
+            className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${
+              filter === t 
+              ? "bg-[#4D5443] text-white shadow-lg -translate-y-1" 
+              : "text-[#7A7D74] hover:bg-[#EBE9E0]"
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {/* History Feed */}
+      <div className="relative">
+        {/* Timeline Line */}
+        <div className="absolute left-[26px] top-0 bottom-0 w-0.5 bg-[#E5E2D9] hidden md:block" />
+
+        <div className="space-y-6">
+          <AnimatePresence mode="popLayout">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-24 gap-4">
+                <Loader2 className="w-12 h-12 text-[#4D5443] animate-spin" />
+                <p className="text-xs font-black text-[#7A7D74] uppercase tracking-widest">Compiling Records...</p>
+              </div>
+            ) : filteredActivities.length === 0 ? (
+              <div className="text-center py-24 bg-[#F5F4F0] border-2 border-dashed border-[#D9D7CE]">
+                <p className="text-sm font-bold text-[#7A7D74] italic">No activities matching your current filters.</p>
+              </div>
+            ) : filteredActivities.map((act, index) => (
+              <motion.div
+                key={act.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="relative group md:pl-16"
+              >
+                {/* Timeline Dot */}
+                <div className="absolute left-[18px] top-5 w-4 h-4 rounded-full bg-white border-4 border-[#4D5443] z-10 hidden md:block group-hover:scale-125 transition-transform" />
+
+                <div className="bg-white border border-[#E5E2D9] p-6 lg:p-8 hover:shadow-2xl transition-all duration-300 hover:border-[#4D5443] group-hover:-translate-y-1">
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                    <div className="flex items-start gap-5">
+                      <div className="p-3 bg-slate-50 border border-slate-100 shrink-0">
+                        {getIcon(act.type)}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                           <span className={`px-2 py-0.5 text-[8px] font-black uppercase tracking-widest rounded ${getStatusColor(act.status)}`}>
+                             {act.status}
+                           </span>
+                           <span className="text-[10px] font-bold text-[#7A7D74] flex items-center gap-1.5">
+                             <Calendar className="w-3 h-3" />
+                             {format(new Date(act.date), 'MMM d, yyyy · HH:mm')}
+                           </span>
+                        </div>
+                        <h4 className="text-xl font-black text-[#2D3128] uppercase italic tracking-tight">{act.title}</h4>
+                        <p className="text-sm font-medium text-[#7A7D74] max-w-2xl">{act.detail}</p>
+                      </div>
                     </div>
-                  </td>
-                  <td className="px-8 py-8">
-                     <p className="font-bold text-sm text-[#2D2D2D]">{txn.from}</p>
-                     {txn.direction === 'IN' && <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mt-1 italic">Incoming Revenue</p>}
-                  </td>
-                  <td className="px-8 py-8">
-                     <p className="font-bold text-sm text-[#2D2D2D]">{txn.to}</p>
-                     {txn.direction === 'OUT' && <p className="text-[9px] font-black text-orange-600 uppercase tracking-widest mt-1 italic">Outgoing Reward</p>}
-                  </td>
-                  <td className="px-8 py-8">
-                    <span className={`text-base font-black tracking-tight ${txn.direction === 'IN' ? 'text-brand-primary' : 'text-orange-600'}`}>
-                      {txn.direction === 'OUT' && '- '}{txn.amount}
-                    </span>
-                  </td>
-                  <td className="px-8 py-8">
-                    <p className="text-xs font-bold text-gray-600 tracking-tight">{txn.date}</p>
-                  </td>
-                  <td className="px-10 py-8 text-right">
-                    <span className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest border ${
-                      txn.status === 'Paid' || txn.status === 'Credited'
-                        ? 'bg-green-50 text-green-600 border-green-100' 
-                        : 'bg-orange-50 text-orange-600 border-orange-100'
-                    }`}>
-                      {txn.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    
+                    <button className="flex items-center gap-2 text-[10px] font-black text-[#4D5443] opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-[0.2em]">
+                      View Source
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       </div>
+
     </div>
   );
 }

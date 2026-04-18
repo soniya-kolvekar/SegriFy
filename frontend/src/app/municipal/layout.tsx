@@ -91,7 +91,6 @@ export default function MunicipalLayout({ children }: MunicipalLayoutProps) {
           <SidebarItem icon={Building2} label="Business" href="/municipal/business" />
           <SidebarItem icon={MessageSquare} label="Complaints" href="/municipal/complaints" />
           <SidebarItem icon={Gavel} label="Fines" href="/municipal/fines" />
-          <SidebarItem icon={History} label="History" href="/municipal/history" />
         </nav>
 
         <div className="p-6 space-y-4 text-center">
@@ -135,8 +134,7 @@ export default function MunicipalLayout({ children }: MunicipalLayoutProps) {
             { icon: Package, label: 'Inventory', href: '/municipal/inventory' },
             { icon: Building2, label: 'Business', href: '/municipal/business' },
             { icon: MessageSquare, label: 'Complaints', href: '/municipal/complaints' },
-            { icon: Gavel, label: 'Fines', href: '/municipal/fines' },
-            { icon: History, label: 'History', href: '/municipal/history' }
+            { icon: Gavel, label: 'Fines', href: '/municipal/fines' }
           ].map((item) => (
             <div 
               key={item.href}

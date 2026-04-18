@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Leaf, Mail, Lock, ArrowRight, ShieldCheck, 
@@ -10,11 +10,26 @@ import { useAuthStore } from '@/context/useAuthStore';
 import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 const cn = (...c: any[]) => c.filter(Boolean).join(' ');
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
+        <div className="animate-pulse flex flex-col items-center gap-4">
+          <div className="w-12 h-12 bg-[#4D5443]/20 rounded-none" />
+          <div className="h-2 w-24 bg-[#4D5443]/10 rounded-none" />
+        </div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -23,9 +38,15 @@ export default function LoginPage() {
   let isAdmin = false;
   const router = useRouter();
   const { user, setAuth } = useAuthStore();
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams.get('redirect');
 
   useEffect(() => {
     if (user) {
+      if (redirectPath) {
+        router.replace(redirectPath);
+        return;
+      }
       if (user.role === 'municipal') router.replace('/municipal');
       else if (user.role === 'worker') router.replace('/worker');
       else if (user.role === 'business') router.replace('/dashboard/business');
@@ -66,7 +87,9 @@ export default function LoginPage() {
         const role = finalUser.role || 'citizen';
         const hasIdentity = finalUser.houseId || finalUser.shopId || finalUser.role === 'municipal';
 
-        if (role === 'municipal') {
+        if (redirectPath) {
+          router.push(redirectPath);
+        } else if (role === 'municipal') {
           router.push('/municipal');
         } else if (role === 'worker') {
           router.push('/worker');

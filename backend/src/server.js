@@ -17,11 +17,17 @@ const io = new Server(server, {
 });
 
 // Middleware
-const rawUrl = process.env.FRONTEND_URL || '*';
-const frontendUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
+const rawUrl = process.env.FRONTEND_URL || '';
+const cleanFrontendUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
+
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  cleanFrontendUrl
+].filter(Boolean);
 
 app.use(cors({
-  origin: frontendUrl,
+  origin: allowedOrigins.length > 0 ? allowedOrigins : '*',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
