@@ -2,9 +2,13 @@
 
 import React, { useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
+<<<<<<< Updated upstream
 import { useAuthStore } from '@/context/useAuthStore';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+=======
+import { Search, Bell, Settings } from 'lucide-react';
+>>>>>>> Stashed changes
 
 export default function DashboardLayout({
   children,
@@ -40,8 +44,9 @@ export default function DashboardLayout({
   const profileHref = user.role === 'business' ? '/dashboard/business/profile' : '/dashboard/profile';
 
   return (
-    <div className="flex bg-brand-bg min-h-screen">
+    <div className="flex bg-[#F5F4F0] min-h-screen font-sans">
       <Sidebar />
+<<<<<<< Updated upstream
       <main className="flex-1 ml-64 min-h-screen overflow-y-auto font-sans antialiased">
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-brand-muted flex items-center justify-between px-10 sticky top-0 z-40">
           <div className="flex-1"></div>
@@ -64,10 +69,44 @@ export default function DashboardLayout({
                   {getInitials(user.name)}
                 </div>
               </Link>
+=======
+      <main className="flex-1 ml-64 min-h-screen overflow-y-auto">
+        <header className="h-20 bg-white/40 backdrop-blur-md border-b border-[#E5E2D9] flex items-center justify-between px-10 sticky top-0 z-40">
+          <div className="flex items-center gap-8 flex-1">
+             <div className="relative w-full max-w-md group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A7D74] group-focus-within:text-[#2D3128] transition-colors" />
+                <input 
+                  type="text" 
+                  placeholder="Search data..." 
+                  className="w-full bg-[#EBE9E0]/50 border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-[#4D5443]/20 focus:bg-white transition-all outline-none"
+                />
+             </div>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <button className="p-2 hover:bg-[#EBE9E0] rounded-xl transition-colors relative">
+               <Bell className="w-5 h-5 text-[#2D3128]" />
+               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+            </button>
+            <button className="p-2 hover:bg-[#EBE9E0] rounded-xl transition-colors">
+               <Settings className="w-5 h-5 text-[#2D3128]" />
+            </button>
+            
+            <div className="flex items-center gap-3 pl-4 border-l border-[#E5E2D9]">
+              <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-white">
+                 <img 
+                   src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" 
+                   alt="Avatar"
+                   className="w-full h-full object-cover"
+                 />
+              </div>
+>>>>>>> Stashed changes
             </div>
           </div>
         </header>
-        {children}
+        <div className="max-w-[1600px] mx-auto">
+          {children}
+        </div>
       </main>
     </div>
   );

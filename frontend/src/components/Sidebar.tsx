@@ -4,33 +4,31 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
-  Home, 
+  LayoutGrid, 
   Calendar, 
+  ClipboardList, 
   Wallet, 
-  MessageSquare, 
-  Shield, 
-  Building2, 
+  BarChart3, 
+  History,
+  HelpCircle,
   LogOut,
   Leaf,
+<<<<<<< Updated upstream
   BarChart3,
   History,
   FileText
+=======
+  MessageCircle
+>>>>>>> Stashed changes
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuthStore } from '@/context/useAuthStore';
 import { useRouter } from 'next/navigation';
 
 const sidebarItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Segregation', href: '/dashboard/segregation', icon: Calendar },
+  { name: 'Overview', href: '/dashboard', icon: LayoutGrid },
   { name: 'Rewards', href: '/dashboard/rewards', icon: Wallet },
-  { name: 'Complaints', href: '/dashboard/complaints', icon: MessageSquare },
-];
-
-const municipalItems = [
-  { name: 'City Stats', href: '/municipal', icon: Shield },
-  { name: 'Residents', href: '/municipal/residents', icon: Home },
-  { name: 'Business Req', href: '/municipal/business', icon: Building2 },
+  { name: 'Complaints', href: '/dashboard/complaints', icon: MessageCircle },
 ];
 
 const businessItems = [
@@ -40,6 +38,7 @@ const businessItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+<<<<<<< Updated upstream
   const isMunicipal = pathname.startsWith('/municipal');
   const isBusiness = pathname.startsWith('/dashboard/business');
   const router = useRouter();
@@ -59,16 +58,32 @@ export default function Sidebar() {
       <div className="p-8 flex flex-col gap-1">
         <span className="text-xl font-heading font-black tracking-tight uppercase">Civic Architect</span>
         <span className="text-[10px] font-bold text-brand-primary/60 uppercase tracking-widest">Waste Management</span>
+=======
+
+  return (
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-[#F5F4F0] border-r border-[#E5E2D9] flex flex-col z-50">
+      {/* Logo Section */}
+      <div className="p-8 flex items-center gap-3">
+        <div className="bg-[#4D5443] p-2.5 rounded-none shadow-sm">
+          <Leaf className="w-6 h-6 text-white" />
+        </div>
+        <div>
+          <h2 className="text-xl font-heading font-black text-[#2D3128] leading-tight">SegriFy</h2>
+          <p className="text-[10px] font-bold text-[#7A7D74] uppercase tracking-widest">Homeowner</p>
+        </div>
+>>>>>>> Stashed changes
       </div>
 
-      <nav className="flex-1 px-4 py-4 space-y-2">
-        {items.map((item) => {
+      {/* Navigation */}
+      <nav className="flex-1 px-4 py-4 space-y-1">
+        {sidebarItems.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
+<<<<<<< Updated upstream
                 "flex items-center gap-4 px-6 py-4 rounded-none transition-all duration-200 group border-l-4",
                 isActive 
                   ? "bg-brand-muted/30 border-brand-primary text-brand-primary font-black shadow-none" 
@@ -77,11 +92,25 @@ export default function Sidebar() {
             >
               <item.icon className="w-5 h-5" />
               <span className="text-sm">{item.name}</span>
+=======
+                "flex items-center gap-4 px-4 py-3 rounded-none transition-all duration-200 group",
+                isActive 
+                  ? "bg-[#D9D7CE] text-[#2D3128] shadow-sm" 
+                  : "hover:bg-[#EBE9E0] text-[#7A7D74] hover:text-[#2D3128]"
+              )}
+            >
+              <item.icon className={cn(
+                "w-5 h-5 transition-colors",
+                isActive ? "text-[#2D3128]" : "group-hover:text-[#2D3128]"
+              )} />
+              <span className="font-semibold text-sm">{item.name}</span>
+>>>>>>> Stashed changes
             </Link>
           );
         })}
       </nav>
 
+<<<<<<< Updated upstream
       <div className="p-4 space-y-4">
         {isBusiness && (
           <Link href="/dashboard/business/requests">
@@ -106,6 +135,18 @@ export default function Sidebar() {
         >
           <LogOut className="w-5 h-5" />
           <span className="font-black text-xs uppercase tracking-widest">Sign-Out</span>
+=======
+      {/* Footer Section */}
+      <div className="p-4 space-y-2">
+        <button className="flex items-center gap-4 px-4 py-3 w-full rounded-none hover:bg-[#EBE9E0] text-[#7A7D74] hover:text-[#2D3128] transition-colors">
+          <HelpCircle className="w-5 h-5" />
+          <span className="font-bold text-sm uppercase">Support</span>
+        </button>
+
+        <button className="flex items-center gap-4 px-4 py-3 w-full rounded-none hover:bg-red-50 text-[#7A7D74] hover:text-red-600 transition-colors">
+          <LogOut className="w-5 h-5" />
+          <span className="font-bold text-sm uppercase">Logout</span>
+>>>>>>> Stashed changes
         </button>
       </div>
     </aside>

@@ -6,8 +6,12 @@ interface User {
   firebaseUid: string;
   name: string;
   email: string;
-  role: 'citizen' | 'worker' | 'municipal' | 'business';
+  role: 'citizen' | 'worker' | 'municipal' | 'business' | 'citizen-independent' | 'citizen-apartment';
   qrToken?: string;
+  qrPayload?: string;
+  houseId?: string;
+  shopId?: string;
+  maskedAadhaar?: string;
   points?: number;
   eligibilityStatus?: boolean;
   businessName?: string;

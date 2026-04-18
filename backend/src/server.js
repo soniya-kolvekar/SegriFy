@@ -7,6 +7,8 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -39,32 +41,44 @@ app.use((req, res, next) => {
 const authRoutes = require('./routes/auth');
 const segregationRoutes = require('./routes/segregation');
 const dashboardRoutes = require('./routes/dashboard');
+<<<<<<< Updated upstream
 const businessRoutes = require('./routes/business');
+=======
+const homeownerRoutes = require('./routes/homeowner');
+>>>>>>> Stashed changes
 
 app.use('/api/auth', authRoutes);
 app.use('/api/segregation', segregationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+<<<<<<< Updated upstream
 app.use('/api/business', businessRoutes);
+=======
+app.use('/api/homeowner', homeownerRoutes);
+
+>>>>>>> Stashed changes
 
 // Routes Placeholder
 app.get('/', (req, res) => {
   res.send('SegriFy API is running...');
 });
 
+
 // Connect to MongoDB
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/segrify';
+const MONGO_URI = process.env.MONGO_URI;
 
+console.log('Connecting to MongoDB...');
 mongoose.connect(MONGO_URI)
   .then(() => {
-    console.log('MongoDB connected successfully');
+    console.log('✅ MongoDB connected successfully');
     server.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+      console.log(`🚀 Server is running on port ${PORT}`);
     });
   })
   .catch(err => {
-    console.error('MongoDB connection error:', err);
+    console.error('❌ MongoDB connection error:', err.message);
   });
+
 
 // Handle real-time event distribution
 global.io = io; // Optional but handy
