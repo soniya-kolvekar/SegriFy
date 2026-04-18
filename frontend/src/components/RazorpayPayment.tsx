@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { apiRequest } from '@/lib/api';
 
 interface RazorpayPaymentProps {
   amount: number;
@@ -32,9 +33,8 @@ const RazorpayPayment: React.FC<RazorpayPaymentProps> = ({
 
     try {
       // 1. Create Order in Backend
-      const orderRes = await fetch('http://localhost:5000/api/payment/order', {
+      const orderRes = await apiRequest('/api/payment/order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount }),
       });
       const orderData = await orderRes.json();
@@ -45,7 +45,7 @@ const RazorpayPayment: React.FC<RazorpayPaymentProps> = ({
 
       // 2. Open Razorpay Checkout
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_YOUR_KEY_ID', // Use public key from env
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Use public key from env
         amount: orderData.amount,
         currency: orderData.currency,
         name: "SegriFy",
@@ -53,9 +53,8 @@ const RazorpayPayment: React.FC<RazorpayPaymentProps> = ({
         order_id: orderData.id,
         handler: async function (response: any) {
           // 3. Verify Payment in Backend
-          const verifyRes = await fetch('http://localhost:5000/api/payment/verify', {
+          const verifyRes = await apiRequest('/api/payment/verify', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,

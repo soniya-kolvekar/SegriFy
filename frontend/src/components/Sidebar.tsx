@@ -12,7 +12,10 @@ import {
   Leaf,
   Home,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  X,
+  Package,
+  Building2
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuthStore } from '@/context/useAuthStore';
@@ -32,10 +35,13 @@ const businessItems = [
 
 const municipalItems = [
   { name: 'Analytics', href: '/municipal', icon: LayoutGrid },
-  { name: 'Verify QR', href: '/municipal/verify', icon: Leaf },
+  { name: 'Inventory', href: '/municipal/inventory', icon: Package },
+  { name: 'Business', href: '/municipal/business', icon: Building2 },
+  { name: 'Complaints', href: '/municipal/complaints', icon: MessageCircle },
+  { name: 'Fines', href: '/municipal/fines', icon: AlertTriangle },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const { logout, user } = useAuthStore();
@@ -58,7 +64,17 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-[#F5F4F0] border-r border-[#E5E2D9] flex flex-col z-50">
+    <aside className="h-full flex flex-col bg-[#F5F4F0]">
+      {/* Mobile Close Button */}
+      {onClose && (
+        <button 
+          onClick={onClose}
+          className="lg:hidden absolute top-6 right-6 p-2 text-[#7A7D74] hover:text-[#2D3128] transition-colors"
+        >
+          <X className="w-6 h-6" />
+        </button>
+      )}
+
       {/* Logo Section */}
       <div className="p-8 flex items-center gap-3">
         <div className="bg-[#4D5443] p-2.5 rounded-none shadow-sm">
@@ -80,6 +96,7 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onClose}
               className={cn(
                 "flex items-center gap-4 px-4 py-3 rounded-none transition-all duration-200 group",
                 isActive 
