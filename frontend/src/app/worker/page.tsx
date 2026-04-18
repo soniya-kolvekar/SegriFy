@@ -239,8 +239,8 @@ export default function WorkerDashboard() {
   }, [isScannerActive, showConfirm]);
 
   return (
-    <div className="min-h-screen bg-brand-primary flex flex-col font-sans transition-colors duration-500">
-      <header className="h-20 bg-black/40 backdrop-blur-md border-b border-white/10 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-50">
+    <div className="min-h-screen bg-[#FDFBF7] flex flex-col font-sans transition-colors duration-500">
+      <header className="h-20 bg-brand-primary border-b border-white/10 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-50 shadow-lg">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-white/10 flex items-center justify-center text-white border border-white/20">
             <QrCode className="w-6 h-6" />
@@ -265,7 +265,7 @@ export default function WorkerDashboard() {
       <main className="flex-1 p-4 lg:p-10 flex flex-col items-center justify-center overflow-hidden">
         <canvas ref={canvasRef} className="hidden" />
         
-        <div className="w-full max-w-lg bg-black/30 backdrop-blur-xl p-8 border border-white/10 flex flex-col relative overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)]">
+        <div className="w-full max-w-lg bg-brand-primary p-8 border border-white/10 flex flex-col relative overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)]">
           {!isScannerActive ? (
             <div className="flex flex-col items-center justify-center text-center py-10 animate-in fade-in zoom-in duration-500">
               <div className="w-24 h-24 bg-white/5 flex items-center justify-center text-white border border-white/10 mb-8 shadow-inner">
@@ -408,7 +408,7 @@ export default function WorkerDashboard() {
                             className="w-full py-6 bg-green-600 hover:bg-green-500 text-white font-black text-xs uppercase tracking-[0.3em] transition-all active:scale-95 disabled:opacity-20 flex items-center justify-center gap-4 shadow-[0_0_30px_rgba(22,163,74,0.2)]"
                           >
                             {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-                            Log Proper Segregation (+10 pts)
+                             Log Proper Segregation
                           </button>
                           <button
                             onClick={() => handleValidation(false)}
@@ -440,7 +440,7 @@ export default function WorkerDashboard() {
         </div>
       </main>
 
-      <footer className="p-10 text-center text-[9px] font-black text-white/20 uppercase tracking-[0.5em] italic">
+      <footer className="p-10 text-center text-[9px] font-black text-brand-primary/20 uppercase tracking-[0.5em] italic">
         © 2024 SEGRiFY MUNICIPALITY // FIELD TErMiNAL NODE 4 // SECURE ACCESS
       </footer>
     </div>

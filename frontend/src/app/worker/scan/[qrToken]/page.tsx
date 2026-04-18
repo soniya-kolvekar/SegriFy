@@ -105,7 +105,7 @@ export default function DirectScanPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-brand-primary flex items-center justify-center p-6">
+      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center p-6">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-10 h-10 text-white animate-spin" />
           <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Decrypting Identity...</p>
@@ -115,8 +115,8 @@ export default function DirectScanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-brand-primary p-6 lg:p-12 flex flex-col items-center justify-center font-sans transition-all duration-500">
-      <div className="w-full max-w-lg bg-black/40 backdrop-blur-xl border border-white/10 shadow-[0_0_150px_rgba(0,0,0,0.6)] relative overflow-hidden">
+    <div className="min-h-screen bg-[#FDFBF7] p-6 lg:p-12 flex flex-col items-center justify-center font-sans transition-all duration-500">
+      <div className="w-full max-w-lg bg-brand-primary border border-white/10 shadow-[0_0_150px_rgba(0,0,0,0.6)] relative overflow-hidden">
         
         {/* Top Decoration */}
         <div className="h-3 bg-brand-secondary/80 animate-pulse" />
@@ -145,7 +145,7 @@ export default function DirectScanPage() {
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-xl font-black text-white uppercase tracking-tighter">Identity Fault</h3>
-                  <p className="text-[10px] font-black text-red-400 uppercase tracking-widest leading-loose">{error}</p>
+                  <p className="text-[10px] font-black text-white/40 uppercase tracking-widest leading-loose">{error}</p>
                 </div>
                 <button 
                   onClick={() => router.push('/worker')}
@@ -222,7 +222,7 @@ export default function DirectScanPage() {
                     onClick={() => handleUpdate('proper')}
                     className="w-full bg-green-600 hover:bg-green-500 text-white py-6 px-8 font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl transition-all active:scale-95 flex items-center justify-between group disabled:opacity-20 disabled:grayscale"
                   >
-                    <span>Log Proper (+10)</span>
+                    <span>Log Proper Segregation</span>
                     <CheckCircle2 className="w-6 h-6 group-hover:rotate-12 transition-transform" />
                   </button>
                   <button 
@@ -245,7 +245,7 @@ export default function DirectScanPage() {
       </div>
 
       <footer className="mt-12 flex flex-col items-center gap-4 opacity-30">
-        <p className="text-[9px] font-black text-white uppercase tracking-[0.6em] italic">
+        <p className="text-[9px] font-black text-brand-primary uppercase tracking-[0.6em] italic">
           SEGRiFY PROTOCOL // FIELD HUB
         </p>
         <div className="w-20 h-1 bg-white/10" />
